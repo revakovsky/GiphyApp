@@ -1,2 +1,5 @@
-# GiphyApp
+# Giphy App
+
 Test app
+
+---
