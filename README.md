@@ -44,27 +44,24 @@ directly to the device settings
 
 ### Basic Architecture
 
-- **Jetpack Compose**
-- **Multi-module project**: Improved scalability and maintainability
-- **MVI (Model-View-Intent)**: Predictable state management and easier debugging
-- **Offline-first app**: Ensures functionality without an active internet connection
-
-### Project Configuration
-
-- Android Splash Screen API for a seamless app start
-- Type-safe navigation for improved navigation reliability
-- Internet check during the entire app lifecycle with notifications for connectivity issues
-- Support for both landscape and portrait orientations
-
-### Libraries and Frameworks
-
-- **Koin DI**: Dependency injection
-- **Room Database**: Offline storage
-- **Retrofit**: Network API calls
-- **Coil**: Loading and previewing images
+- Jetpack Compose
+- Multi-module project
+- MVI
+- Offline-first app: Ensures functionality without an active internet connection
 
 ### Features and Functionality
 
+- Support for both landscape and portrait orientations
+- Android Splash Screen
+- Type-safe compose navigation
+- Internet check during the entire app lifecycle with notifications for connectivity issues
 - Kotlin Coroutines for background operations
 - Kotlin Flows for efficient and reactive data handling and transfer
 - Focusable states for advanced accessibility and interactions.
+
+### Libraries and Frameworks
+
+- Koin DI
+- Room Database
+- Retrofit
+- Coil
