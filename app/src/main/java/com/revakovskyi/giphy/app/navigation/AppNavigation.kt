@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.revakovskyi.giphy.gifs.presentation.gifs.GifsScreen
 
 private const val TRANSITION_DURATION = 300
 
@@ -44,7 +45,7 @@ fun AppNavigation() {
     ) {
 
         composable<Destinations.Gifs> {
-            // TODO: create a screen
+            GifsScreen()
         }
 
         composable<Destinations.GifDetail> {

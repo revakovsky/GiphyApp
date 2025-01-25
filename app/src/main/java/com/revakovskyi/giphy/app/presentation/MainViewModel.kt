@@ -1,5 +1,6 @@
-package com.revakovskyi.giphy.app.main
+package com.revakovskyi.giphy.app.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revakovskyi.giphy.core.domain.connectivity.ConnectivityObserver
@@ -32,6 +33,11 @@ class MainViewModel(
         val isDataBaseEmpty = flowOf(false) /*TODO: add a flow from a database*/
 
         combine(internetStatusFlow, isDataBaseEmpty) { internetStatus, isDbEmpty ->
+
+            Log.d("TAG_Max", "MainViewModel.kt: internetStatus = $internetStatus")
+            Log.d("TAG_Max", "MainViewModel.kt: isDbEmpty = $isDbEmpty")
+            Log.d("TAG_Max", "")
+
             determineState(internetStatus, isDbEmpty)
         }.onEach { newState ->
             _state.value = newState
@@ -52,11 +58,7 @@ class MainViewModel(
                 MainState(isInternetAvailable = false, canOpenGifs = true)
             }
 
-            !isDbEmpty && internetStatus == InternetStatus.Available -> {
-                MainState(isInternetAvailable = true, canOpenGifs = true)
-            }
-
-            else -> MainState()
+            else -> MainState(isInternetAvailable = true, canOpenGifs = true)
         }
     }
 

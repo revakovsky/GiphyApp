@@ -1,4 +1,4 @@
-package com.revakovskyi.giphy.app.main
+package com.revakovskyi.giphy.app.presentation
 
 import android.graphics.Color
 import android.os.Bundle
@@ -8,15 +8,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.revakovskyi.giphy.app.main.components.NoInternetScreen
 import com.revakovskyi.giphy.app.navigation.AppNavigation
+import com.revakovskyi.giphy.app.presentation.components.NoInternetScreen
 import com.revakovskyi.giphy.core.presentation.theme.GiphyAppTheme
 import com.revakovskyi.giphy.core.presentation.uitls.SingleEvent
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -40,12 +39,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             GiphyAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
                     Surface(
                         color = MaterialTheme.colorScheme.background,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         val state = viewModel.state.collectAsStateWithLifecycle().value
 

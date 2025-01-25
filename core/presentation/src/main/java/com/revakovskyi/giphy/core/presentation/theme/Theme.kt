@@ -10,8 +10,9 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = GiphyPink,
-    onPrimaryContainer = GiphyWhite,
+    onPrimary = GiphyWhite,
     secondary = GiphyBlue,
+    onSecondary = GiphyPinkLight,
     background = GiphyBlack,
 )
 
@@ -25,6 +26,7 @@ fun GiphyAppTheme(
         SideEffect {
             val window = (view.context as ComponentActivity).window
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
         }
     }
 
