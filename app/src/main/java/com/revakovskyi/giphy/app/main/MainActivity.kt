@@ -7,15 +7,13 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.revakovskyi.giphy.app.navigation.AppNavigation
 import com.revakovskyi.giphy.core.presentation.theme.GiphyAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -38,22 +36,12 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-
-                            Text(
-                                text = "TEST",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-
-                        }
-
+                        AppNavigation()
                     }
                 }
             }
         }
+
     }
+
 }
