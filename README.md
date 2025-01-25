@@ -1,77 +1,70 @@
 # Giphy App
 
-Test app
+Test task: an application to display GIF animations from the Giphy website
 
 ---
 
-
 ### Project overview
 
-// TODO: MODIFY an overview!!!
+This application retrieves a list of GIF images from the [Giphy](https://developers.giphy.com/) web
+API and displays them to the user. Users can click on any GIF to view it in full-screen mode on the
+next screen
 
-This application is used to download a list of GIF images from
-the [Giphy](https://developers.giphy.com/) web API and show them to the user.
-If desired, the user can click on any GIF and it will open on the next screen in full-screen mode.
+When the application is launched, the user is greeted with a splash screen where the Internet
+connection is checked.  
+If no connection is detected and the local database is empty (e.g., the application is being
+launched for the first time), a dedicated screen appears to inform the user about the issue with the
+Internet connection and provides the option to navigate to the device settings to enable it
 
-**Images are uploaded in two different ways:**
+If the Internet connection is unavailable but the database already contains previously saved and
+cached GIF images, the application opens a screen displaying the GIFs. At the same time, the user is
+notified about the lack of Internet connectivity with an option to quickly navigate from this screen
+directly to the device settings
 
-1. [Trending GIF images](https://developers.giphy.com/docs/api/endpoint/#trending) that are loaded
-   every time you enter the application either from the database or from
-   the Internet if the database is empty. If you perform a “swipe to refresh” action on the screen
-   with
-   a list of GIFs, a new list with trending GIFs will be downloaded directly from the Internet,
-   saved to the database,
-   and displayed on the screen.
-2. [Searched GIF images](https://developers.giphy.com/docs/api/endpoint/#search) that are relevant
-   to the query entered in the search field (there is a check for entering certain
-   characters). These images are downloaded from the Internet and immediately displayed on the
-   search screen
-   without saving them to the database
+**GIF Images Are Loaded in Two Ways:**
 
-When opening the application, the user is greeted with a splash screen on which the Internet
-connection is checked.
-If there is no connection, the corresponding screen is displayed, which informs about this and
-offers to go
-to the device settings and turn on the Internet
+1. [Trending GIFs](https://developers.giphy.com/docs/api/endpoint/#trending) - trending GIFs are
+   loaded every time the application is opened. They are retrieved either from the local database or
+   from the Internet if the database is empty. If the user performs a “swipe to refresh” action on
+   the screen displaying the GIF list, a new set of trending GIFs will be fetched directly from the
+   Internet, saved to the database, and displayed on the screen
 
+2. [Searched GIFs](https://developers.giphy.com/docs/api/endpoint/#search) - these GIFs are fetched
+   from the Internet based on the query entered in the search field (with validation for specific
+   characters). The retrieved GIFs are displayed immediately on the search screen but are not saved
+   to the database
 
-#### Minimum Android Version:
+### Minimum Android Version:
 
 - Mobile app: Android 8.0 (API level 26)
 
-
-#### Project Launch:
+### Project Launch:
 
 // TODO: add a description how to launch the app and it's possible or now
 
-
 ### Basic Architecture
 
-- Jetpack Compose
-- Multi-module project
-- MVI (Model-View-Intent) pattern
-- Offline-first app
-
+- **Jetpack Compose**
+- **Multi-module project**: Improved scalability and maintainability
+- **MVI (Model-View-Intent)**: Predictable state management and easier debugging
+- **Offline-first app**: Ensures functionality without an active internet connection
 
 ### Project Configuration
 
-- Android Splash Screen API
-- Type-safe navigation
-- Internet check during whole app lifecycle
-- Landscape/Portrait screen orientation
-
+- Android Splash Screen API for a seamless app start
+- Type-safe navigation for improved navigation reliability
+- Internet check during the entire app lifecycle with notifications for connectivity issues
+- Support for both landscape and portrait orientations
 
 ### Libraries and Frameworks
 
-- Koin for dependency injection
-- Room Database for offline storage
-- Retrofit for the network calling
-- Coil for loading and previewing images
-
+- **Koin DI**: Dependency injection
+- **Room Database**: Offline storage
+- **Retrofit**: Network API calls
+- **Coil**: Loading and previewing images
 
 ### Features and Functionality
 
-- Custom Result class to process Http requests and errors
-- Kotlin Coroutines
-- Kotlin Flows to transfer data
-- Work with focusable states
+- Kotlin Coroutines for background operations
+- Kotlin Flows for efficient and reactive data handling and transfer
+- Focusable states for advanced accessibility and interactions.
