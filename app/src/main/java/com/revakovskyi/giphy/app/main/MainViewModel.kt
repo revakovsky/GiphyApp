@@ -2,28 +2,61 @@ package com.revakovskyi.giphy.app.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import com.revakovskyi.giphy.core.domain.connectivity.ConnectivityObserver
+import com.revakovskyi.giphy.core.domain.connectivity.InternetStatus
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 
-class MainViewModel : ViewModel() {
+class MainViewModel(
+    private val connectivityObserver: ConnectivityObserver,
+) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
     val state = _state.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            // TODO: improve it later
+    private val _event = Channel<MainEvent>()
+    val event = _event.receiveAsFlow()
 
-            delay(2000)
-            _state.update {
-                it.copy(
-                    isInternetAvailable = false,
-                    canOpenGifs = false,
-                )
+    init {
+        observeData()
+    }
+
+    private fun observeData() {
+        val internetStatusFlow = connectivityObserver.internetStatus
+        val isDataBaseEmpty = flowOf(false) /*TODO: add a flow from a database*/
+
+        combine(internetStatusFlow, isDataBaseEmpty) { internetStatus, isDbEmpty ->
+            determineState(internetStatus, isDbEmpty)
+        }.onEach { newState ->
+            _state.value = newState
+        }.launchIn(viewModelScope)
+    }
+
+    private fun determineState(
+        internetStatus: InternetStatus,
+        isDbEmpty: Boolean,
+    ): MainState {
+        return when {
+            isDbEmpty && internetStatus != InternetStatus.Available -> {
+                MainState(isInternetAvailable = false, canOpenGifs = false)
             }
+
+            !isDbEmpty && internetStatus != InternetStatus.Available -> {
+                _event.trySend(MainEvent.ShowInternetNotification)
+                MainState(isInternetAvailable = false, canOpenGifs = true)
+            }
+
+            !isDbEmpty && internetStatus == InternetStatus.Available -> {
+                MainState(isInternetAvailable = true, canOpenGifs = true)
+            }
+
+            else -> MainState()
         }
     }
 
