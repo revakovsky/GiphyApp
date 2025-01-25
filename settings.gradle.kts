@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         google {
@@ -19,6 +21,18 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Giphy App"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
+rootProject.name = "GiphyApp"
+
 include(":app")
- 
+
+include(":gifs:data")
+include(":gifs:domain")
+include(":gifs:presentation")
+
+include(":core:network")
+include(":core:database")
+include(":core:data")
+include(":core:domain")
+include(":core:presentation")

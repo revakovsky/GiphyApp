@@ -6,12 +6,17 @@ minSdk = "26"
 targetSdk = "35"
 versionCode = "1"
 versionName = "1.0"
+jvmTargetVersion = "1.8"
+kotlinCompilerExtensionVersion = "1.5.1"
+
 appId = "com.revakovskyi.giphy.app"
 
 # Main
 agp = "8.4.2"
 kotlin = "2.0.0"
 coreKtx = "1.13.1"
+jvm = "1.9.22"
+ksp = "2.0.0-1.0.24"
 
 # Android
 lifecycleRuntimeKtx = "2.8.7"
@@ -30,7 +35,6 @@ navigationCompose = "2.8.5"
 
 # Koin
 koinAndroid = "3.5.6"
-ksp = "2.0.21-1.0.28"
 koinAnnotations = "1.2.2"
 
 # Room
@@ -106,6 +110,8 @@ coil-gif = { group = "io.coil-kt", name = "coil-gif", version.ref = "ver_Coil" }
 
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jvm" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
@@ -114,6 +120,11 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 
 [bundles]
+
+android-library-core = [
+    "androidx-core-ktx",
+    "coroutines-android",
+]
 
 lifecycle = [
     "androidx-lifecycle-runtime-ktx",

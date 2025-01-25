@@ -37,13 +37,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = libs.versions.jvmTargetVersion.get()
     }
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = libs.versions.kotlinCompilerExtensionVersion.get()
     }
     packaging {
         resources {
@@ -54,9 +54,20 @@ android {
 
 dependencies {
 
+    // Modules
+    implementation(projects.core.network)
+    implementation(projects.core.database)
+    implementation(projects.core.data)
+    implementation(projects.core.domain)
+    implementation(projects.core.presentation)
+
+    implementation(projects.gifs.data)
+    implementation(projects.gifs.domain)
+    implementation(projects.gifs.presentation)
+
+
     // Core
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.coroutines.android)
+    implementation(libs.bundles.android.library.core)
 
     // Compose
     implementation(libs.bundles.compose)
