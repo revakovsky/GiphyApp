@@ -84,4 +84,7 @@ dependencies {
     implementation(libs.bundles.koin)
     ksp(libs.koin.ksp.compiler)
 
+    // Splash screen
+    implementation(libs.androidx.core.splashscreen)
+
 }

@@ -20,6 +20,7 @@ ksp = "2.0.0-1.0.24"
 
 # Android
 lifecycleRuntimeKtx = "2.8.7"
+coreSplashscreen = "1.0.1"
 
 # Kotlin
 coroutinesAndroid = "1.8.1"
@@ -55,6 +56,7 @@ ver_Coil = "2.6.0"
 
 # Android
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 
 # Lifecycle
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
