@@ -3,6 +3,7 @@ package com.revakovskyi.giphy.app.presentation.components
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,11 +31,7 @@ import com.revakovskyi.giphy.core.presentation.components.GradientBackground
 import com.revakovskyi.giphy.core.presentation.theme.GiphyAppTheme
 
 @Composable
-fun NoInternetScreen() {
-
-    val settingsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { _ -> }
+fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
 
     GradientBackground {
 
@@ -66,7 +63,7 @@ fun NoInternetScreen() {
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = stringResource(id = R.string.connection_was_lost),
+                    text = stringResource(id = R.string.no_internet_connection),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -92,6 +89,10 @@ fun NoInternetScreen() {
 @Composable
 private fun PreviewSizesNoInternetScreen() {
     GiphyAppTheme {
-        NoInternetScreen()
+        NoInternetScreen(
+            settingsLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()
+            ) { _ -> }
+        )
     }
 }
