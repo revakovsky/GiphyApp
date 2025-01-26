@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -15,11 +16,40 @@ android {
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+
+            buildConfigField(
+                type = "String",
+                name = "BASE_URL",
+                value = "\"https://api.giphy.com/v1/gifs/\""
+            )
+            buildConfigField(
+                type = "String",
+                name = "API_KEY",
+                value = "\"KAOSFbLWfyLorjDogqvJbUFxa74btjK5\""
+            )
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
+            )
+
+            buildConfigField(
+                type = "String",
+                name = "BASE_URL",
+                value = "\"https://api.giphy.com/v1/gifs/\""
+            )
+            buildConfigField(
+                type = "String",
+                name = "API_KEY",
+                value = "\"KAOSFbLWfyLorjDogqvJbUFxa74btjK5\""
             )
         }
     }
@@ -30,11 +60,21 @@ android {
     kotlinOptions {
         jvmTarget = libs.versions.jvmTargetVersion.get()
     }
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
 
     // Core
     implementation(libs.bundles.android.library.core)
+
+    // Network
+    implementation(libs.bundles.okHttp)
+    implementation(libs.bundles.retrofit2)
+
+    // Koin
+    implementation(libs.bundles.koin)
 
 }
