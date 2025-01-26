@@ -10,29 +10,52 @@ This application retrieves a list of GIF images from the [Giphy](https://develop
 API and displays them to the user. Users can click on any GIF to view it in full-screen mode on the
 next screen
 
+#### Splash Screen
+
 When the application is launched, the user is greeted with a splash screen where the Internet
-connection is checked.  
-If no connection is detected and the local database is empty (e.g., the application is being
-launched for the first time), a dedicated screen appears to inform the user about the issue with the
-Internet connection and provides the option to navigate to the device settings to enable it
+connection is checked
 
-If the Internet connection is unavailable but the database already contains previously saved and
-cached GIF images, the application opens a screen displaying the GIFs. At the same time, the user is
-notified about the lack of Internet connectivity with an option to quickly navigate from this screen
-directly to the device settings
+- If no connection is detected and the local database is empty (e.g., the application is being
+  launched for the first time), a dedicated screen informs the user about the issue with the
+  Internet
+  connection and provides the option to navigate to the device settings to enable it
 
-**GIF Images Are Loaded in Two Ways:**
+- If the Internet connection is unavailable but the database already contains previously saved and
+  cached GIF images, the application opens a screen displaying the GIFs. At the same time, the user
+  is
+  notified about the lack of Internet connectivity with an option to quickly navigate from this
+  screen
+  directly to the device settings
 
-1. [Trending GIFs](https://developers.giphy.com/docs/api/endpoint/#trending) - trending GIFs are
-   loaded every time the application is opened. They are retrieved either from the local database or
-   from the Internet if the database is empty. If the user performs a “swipe to refresh” action on
-   the screen displaying the GIF list, a new set of trending GIFs will be fetched directly from the
-   Internet, saved to the database, and displayed on the screen
+### GIF Images Loading
 
-2. [Searched GIFs](https://developers.giphy.com/docs/api/endpoint/#search) - these GIFs are fetched
-   from the Internet based on the query entered in the search field (with validation for specific
-   characters). The retrieved GIFs are displayed immediately on the search screen but are not saved
-   to the database
+#### Search Functionality
+
+- If the local database already contains previously requested GIF images, the application displays
+  images based on the most recent search query from the database
+
+- If the user navigates to the next page of the current search query, the application fetches and
+  displays images for the next page of the current query
+
+- If the user enters a new search query, the application fetches images for the new query and
+  displays
+  them. All previously saved GIFs in the local database are cleared and replaced with the newly
+  retrieved results
+
+#### Search Requests
+
+All user search queries (validated for specific characters) are processed by making requests to the
+Giphy Search API. For example:
+https://api.giphy.com/v1/gifs/search?api_key=YOUR_API_KEY&q=SEARCH_QUERY&limit=25&offset=OFFSET&rating=g
+
+#### Individual GIF View
+
+If a user selects a GIF from the list, it is displayed in full-screen mode on a new screen. To fetch
+this high-quality and detailed GIF, the application makes a separate request to the following
+endpoint:
+https://api.giphy.com/v1/gifs/{GIF_ID}?api_key=YOUR_API_KEY&rating=g
+
+This high-resolution GIF is not saved to the local database
 
 ### Minimum Android Version:
 
