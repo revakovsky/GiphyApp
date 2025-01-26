@@ -3,6 +3,7 @@ package com.revakovskyi.giphy.app
 import android.app.Application
 import com.revakovskyi.giphy.app.di.appViewModelModule
 import com.revakovskyi.giphy.core.data.di.dataCoreModule
+import com.revakovskyi.giphy.core.database.di.databaseModule
 import com.revakovskyi.giphy.core.network.di.networkModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -24,7 +25,8 @@ class App : Application() {
                 listOf(
                     appViewModelModule,
                     dataCoreModule,
-                    networkModule
+                    networkModule,
+                    databaseModule,
                 )
             )
         }

@@ -38,6 +38,7 @@ dependencies {
     // Modules
     implementation(projects.core.domain)
     implementation(projects.core.network)
+    implementation(projects.core.database)
 
     // Core
     implementation(libs.bundles.android.library.core)
