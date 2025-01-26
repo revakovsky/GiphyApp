@@ -31,9 +31,15 @@ android {
     kotlinOptions {
         jvmTarget = libs.versions.jvmTargetVersion.get()
     }
+    buildFeatures {
+        compose = true
+    }
 }
 
 dependencies {
+
+    // Modules
+    implementation(projects.core.presentation)
 
     // Core
     implementation(libs.bundles.android.library.core)
