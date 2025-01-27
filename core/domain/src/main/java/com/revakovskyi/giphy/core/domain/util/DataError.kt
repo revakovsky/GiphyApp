@@ -17,8 +17,9 @@ sealed interface DataError : Error {
         UNKNOWN
     }
 
-    enum class Local: DataError {
+    enum class Local : DataError {
         DISK_FULL,
+        UNKNOWN,
     }
 
 }

@@ -10,6 +10,10 @@ java {
 
 dependencies {
 
+    // Modules
+    api(projects.core.domain)
+
+    // Coroutines
     implementation(libs.coroutines.android)
 
 }

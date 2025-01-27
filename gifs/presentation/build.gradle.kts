@@ -40,6 +40,7 @@ dependencies {
 
     // Modules
     implementation(projects.core.presentation)
+    implementation(projects.gifs.domain)
 
     // Core
     implementation(libs.bundles.android.library.core)
@@ -51,5 +52,8 @@ dependencies {
 
     // Lifecycle
     implementation(libs.bundles.lifecycle)
+
+    // Koin
+    implementation(libs.bundles.koin)
 
 }

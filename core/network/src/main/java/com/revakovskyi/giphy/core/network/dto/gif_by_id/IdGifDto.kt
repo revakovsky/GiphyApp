@@ -1,16 +1,13 @@
 package com.revakovskyi.giphy.core.network.dto.gif_by_id
 
 import com.google.gson.annotations.SerializedName
-import com.revakovskyi.giphy.core.network.dto.Meta
 
-data class IdGif(
+data class IdGifDto(
     @SerializedName("data")
-    val data: Data,
-    @SerializedName("meta")
-    val meta: Meta,
+    val gifInfo: GifInfo,
 )
 
-data class Data(
+data class GifInfo(
     @SerializedName("id")
     val id: String,
     @SerializedName("images")

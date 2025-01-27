@@ -6,6 +6,7 @@ import com.revakovskyi.giphy.core.presentation.R
 fun DataError.asUiText(): UiText {
     return when (this) {
         DataError.Local.DISK_FULL -> UiText.StringResource(R.string.error_disk_full)
+        DataError.Local.UNKNOWN -> UiText.StringResource(R.string.error_db_unknown)
 
         DataError.Network.BAD_REQUEST -> UiText.StringResource(R.string.error_bad_request)
         DataError.Network.UNAUTHORIZED -> UiText.StringResource(R.string.error_unauthorized)

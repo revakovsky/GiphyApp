@@ -1,10 +1,12 @@
 package com.revakovskyi.giphy.app
 
 import android.app.Application
-import com.revakovskyi.giphy.app.di.appViewModelModule
+import com.revakovskyi.giphy.app.di.appModule
 import com.revakovskyi.giphy.core.data.di.dataCoreModule
 import com.revakovskyi.giphy.core.database.di.databaseModule
 import com.revakovskyi.giphy.core.network.di.networkModule
+import com.revakovskyi.giphy.gifs.data.di.gifsDataModule
+import com.revakovskyi.giphy.gifs.presentation.di.gifsPresentationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -23,10 +25,12 @@ class App : Application() {
             androidContext(this@App)
             modules(
                 listOf(
-                    appViewModelModule,
+                    appModule,
                     dataCoreModule,
                     networkModule,
                     databaseModule,
+                    gifsPresentationModule,
+                    gifsDataModule,
                 )
             )
         }

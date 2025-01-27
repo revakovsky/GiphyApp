@@ -34,7 +34,14 @@ android {
 
 dependencies {
 
+    // Modules
+    implementation(projects.core.data)
+    implementation(projects.gifs.domain)
+
     // Core
     implementation(libs.bundles.android.library.core)
+
+    // Koin
+    implementation(libs.bundles.koin)
 
 }

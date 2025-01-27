@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
 import com.revakovskyi.giphy.core.database.entities.DeletedGifEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DeletedGifsDao {
@@ -12,7 +13,7 @@ interface DeletedGifsDao {
     suspend fun insertDeletedGif(deletedGif: DeletedGifEntity)
 
     @Query("SELECT gif_id FROM deleted_gifs WHERE `query` = :query")
-    suspend fun getDeletedGifIdsByQuery(query: String): List<String>
+    fun getDeletedGifIdsByQuery(query: String): Flow<List<String>>
 
     @Query("DELETE FROM deleted_gifs")
     suspend fun clearDeletedGifs()

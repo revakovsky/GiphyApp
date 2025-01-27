@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="error_disk_full">Disk is full. Please free up some space and try again</string>
+    <string name="error_db_unknown">Can\'t find previous gifs. Make a new request</string>
     <string name="error_bad_request">Bad Request. The request was not formed correctly</string>
     <string name="error_unauthorized">Unauthorized. Please check your credentials or API key</string>
     <string name="error_forbidden">Forbidden. You are not authorized to access this resource</string>

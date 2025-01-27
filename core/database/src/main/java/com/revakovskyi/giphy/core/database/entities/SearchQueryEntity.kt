@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "search_queries")
 data class SearchQueryEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @PrimaryKey val id: Long = 1,
     @ColumnInfo(name = "query") val query: String,
     @ColumnInfo(name = "current_page") val currentPage: Int,
 )

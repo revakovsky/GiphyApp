@@ -1,16 +1,13 @@
 package com.revakovskyi.giphy.core.network.dto.searched_gifs
 
 import com.google.gson.annotations.SerializedName
-import com.revakovskyi.giphy.core.network.dto.Meta
 
 data class SearchedGifsDto(
     @SerializedName("data")
-    val data: List<Data>,
-    @SerializedName("meta")
-    val meta: Meta,
+    val data: List<SearchedGifsInfo>,
 )
 
-data class Data(
+data class SearchedGifsInfo(
     @SerializedName("id")
     val id: String,
     @SerializedName("images")

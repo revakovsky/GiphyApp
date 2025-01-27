@@ -23,13 +23,6 @@ fun SearchQuery.toEntity(): SearchQueryEntity {
     )
 }
 
-fun DeletedGifEntity.toDomain(): DeletedGif {
-    return DeletedGif(
-        gifId = gifId,
-        query = query
-    )
-}
-
 fun DeletedGif.toEntity(): DeletedGifEntity {
     return DeletedGifEntity(
         gifId = gifId,
@@ -40,6 +33,14 @@ fun DeletedGif.toEntity(): DeletedGifEntity {
 fun GifEntity.toDomain(): Gif {
     return Gif(
         id = gifId,
+        url = url
+    )
+}
+
+fun Gif.toEntity(queryId: Long): GifEntity {
+    return GifEntity(
+        gifId = id,
+        queryId = queryId,
         url = url
     )
 }

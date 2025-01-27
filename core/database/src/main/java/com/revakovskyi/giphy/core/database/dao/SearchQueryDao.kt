@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
 import com.revakovskyi.giphy.core.database.entities.SearchQueryEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SearchQueryDao {
@@ -11,10 +12,10 @@ interface SearchQueryDao {
     @Upsert
     suspend fun saveQuery(query: SearchQueryEntity)
 
-    @Query("SELECT * FROM search_queries WHERE `query` = :query LIMIT 1")
-    suspend fun getQuery(query: String): SearchQueryEntity?
+    @Query("SELECT * FROM search_queries LIMIT 1")
+    fun getLastQuery(): Flow<SearchQueryEntity?>
 
-    @Query("DELETE FROM search_queries WHERE `query` != :query")
-    suspend fun clearOtherQueries(query: String)
+    @Query("UPDATE search_queries SET current_page = :currentPage WHERE id = 1")
+    suspend fun updateCurrentPage(currentPage: Int)
 
 }

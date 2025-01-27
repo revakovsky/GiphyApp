@@ -3,19 +3,20 @@ package com.revakovskyi.giphy.app.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.revakovskyi.giphy.core.data.local_db.DbManager
 import com.revakovskyi.giphy.core.domain.connectivity.ConnectivityObserver
 import com.revakovskyi.giphy.core.domain.connectivity.InternetStatus
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 
 class MainViewModel(
     private val connectivityObserver: ConnectivityObserver,
+    private val dbManager: DbManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainState())
@@ -30,7 +31,7 @@ class MainViewModel(
 
     private fun observeData() {
         val internetStatusFlow = connectivityObserver.internetStatus
-        val isDataBaseEmpty = flowOf(false) /*TODO: add a flow from a database*/
+        val isDataBaseEmpty = dbManager.isDbEmpty()
 
         combine(internetStatusFlow, isDataBaseEmpty) { internetStatus, isDbEmpty ->
 
