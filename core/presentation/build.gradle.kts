@@ -38,6 +38,9 @@ android {
 
 dependencies {
 
+    // Modules
+    implementation(projects.core.domain)
+
     // Core
     implementation(libs.bundles.android.library.core)
 

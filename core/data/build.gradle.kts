@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -36,11 +38,17 @@ dependencies {
 
     // Modules
     implementation(projects.core.domain)
+    implementation(projects.core.network)
+    implementation(projects.core.database)
 
     // Core
     implementation(libs.bundles.android.library.core)
+    implementation(libs.kotlinx.serialization.json)
 
     // Koin
     implementation(libs.bundles.koin)
+
+    // Network
+    implementation(libs.bundles.retrofit2)
 
 }

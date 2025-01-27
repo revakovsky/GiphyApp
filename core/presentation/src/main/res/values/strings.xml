@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_disk_full">Disk is full. Please free up some space and try again</string>
+    <string name="error_db_unknown">Can\'t find previous gifs. Make a new request</string>
+    <string name="error_bad_request">Bad Request. The request was not formed correctly</string>
+    <string name="error_unauthorized">Unauthorized. Please check your credentials or API key</string>
+    <string name="error_forbidden">Forbidden. You are not authorized to access this resource</string>
+    <string name="error_not_found">Not Found. The requested resource could not be found</string>
+    <string name="error_too_many_requests">Too many requests. You have exceeded the rate limit</string>
+    <string name="error_uri_too_long">The search query or URL is too long. Please shorten it and try again</string>
+    <string name="error_request_timeout">Request timeout. Please check your internet connection and try again</string>
+    <string name="error_payload_too_large">Payload too large. Please reduce the size of the request and try again</string>
+    <string name="error_server_error">Server error. Please try again later</string>
+    <string name="error_no_internet">No internet connection. Please connect to the internet and try again</string>
+    <string name="error_serialization">Serialization error. There was a problem processing the data</string>
+    <string name="error_unknown">Unknown error. Something went wrong. Please try again</string>
+</resources>

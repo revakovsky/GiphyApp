@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -12,6 +14,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     buildTypes {
@@ -36,5 +42,12 @@ dependencies {
 
     // Core
     implementation(libs.bundles.android.library.core)
+
+    // Koin
+    implementation(libs.bundles.koin)
+
+    // Room
+    implementation(libs.bundles.room)
+    ksp(libs.room.compiler)
 
 }
