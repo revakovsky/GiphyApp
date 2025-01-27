@@ -1,6 +1,5 @@
 package com.revakovskyi.giphy.gifs.presentation.gifs
 
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revakovskyi.giphy.core.domain.util.Result
@@ -31,7 +30,6 @@ class GifsViewModel(
 
     init {
         observeForGifs()
-        observeForSearchingQuery()
     }
 
 
@@ -40,6 +38,7 @@ class GifsViewModel(
             GifsAction.Search -> getGifsBySearchingQuery()
             GifsAction.Cancel -> hideSearchingButtons()
             GifsAction.ClearQuery -> clearSearchingQuery()
+            is GifsAction.QueryEntered -> queryEntered(action.query)
             is GifsAction.GetGifsForPage -> getGifsForPage(action.page)
             is GifsAction.OpenOriginalGif -> openOriginalGif(action.gifId)
             is GifsAction.DeleteGif -> deleteGif(action.gifId)
@@ -67,25 +66,6 @@ class GifsViewModel(
             }.launchIn(viewModelScope)
     }
 
-    private fun observeForSearchingQuery() {
-        snapshotFlow { state.value.searchingQuery }
-            .onEach { input ->
-                val validationResult = queryValidator.appropriateLanguage(input)
-                handleLanguageValidationResult(input, validationResult)
-            }.launchIn(viewModelScope)
-    }
-
-    private fun handleLanguageValidationResult(input: String, validationResult: UiText?) {
-        if (validationResult == null) {
-            _state.update {
-                it.copy(
-                    searchingQuery = input.trim(),
-                    errorMessage = null,
-                )
-            }
-        } else _state.update { it.copy(errorMessage = validationResult) }
-    }
-
     private fun getGifsBySearchingQuery() {
         val validationResult = queryValidator.validate(state.value.searchingQuery)
 
@@ -102,6 +82,17 @@ class GifsViewModel(
     private fun clearSearchingQuery() {
         _state.update {
             it.copy(searchingQuery = "", errorMessage = null)
+        }
+    }
+
+    private fun queryEntered(query: String) {
+        val validationResult = queryValidator.validate(query)
+
+        _state.update {
+            it.copy(
+                searchingQuery = query,
+                errorMessage = validationResult
+            )
         }
     }
 

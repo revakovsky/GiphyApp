@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="successfully_deleted">Successfully deleted!</string>
+    <string name="input_a_searching_query">Input a searching query</string>
+    <string name="your_query">your query..</string>
 </resources>

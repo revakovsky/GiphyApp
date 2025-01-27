@@ -27,6 +27,13 @@ val AppTypography = Typography(
         lineHeight = 25.sp,
         color = GiphyWhite,
     ),
+    bodySmall = TextStyle(
+        fontFamily = Nunito,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 25.sp,
+        color = GiphyWhite,
+    ),
 
     // Title
     titleMedium = TextStyle(
@@ -49,5 +56,14 @@ val AppTypography = Typography(
         textAlign = TextAlign.Center,
         color = GiphyWhite,
         shadow = Shadow(color = Color.Black, blurRadius = 15f),
+    ),
+    // Text in the input text field
+    labelLarge = TextStyle(
+        fontFamily = Nunito,
+        fontWeight = FontWeight.Normal,
+        fontSize = 18.sp,
+        lineHeight = 25.sp,
+        letterSpacing = 0.sp,
+        color = GiphyWhite,
     ),
 )

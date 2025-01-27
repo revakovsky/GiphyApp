@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
         ) { }
 
         setContent {
-            com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme {
+            GiphyAppTheme {
                 MainContent(
                     viewModel = viewModel,
                     settingsLauncher = settingsLauncher
@@ -84,16 +84,16 @@ private fun MainContent(
     val snackBarHostState = remember { SnackbarHostState() }
 
 
-    com.revakovskyi.giphy.core.presentation.ui.uitls.SingleEvent(flow = viewModel.event) { event ->
+    SingleEvent(flow = viewModel.event) { event ->
         when (event) {
             MainEvent.ShowInternetNotification -> {
                 coroutineScope.launch {
-                    com.revakovskyi.giphy.core.presentation.ui.uitls.SnackBarController.sendEvent(
-                        com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarEvent(
+                    SnackBarController.sendEvent(
+                        SnackBarEvent(
                             message = context.getString(R.string.no_internet_connection),
-                            action = com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarAction(
+                            action = SnackBarAction(
                                 name = context.getString(R.string.settings),
-                                action = { settingsLauncher?.launch(Intent(Settings.ACTION_WIFI_SETTINGS)) }
+                                action = { settingsLauncher.launch(Intent(Settings.ACTION_WIFI_SETTINGS)) }
                             )
                         )
                     )
@@ -105,7 +105,7 @@ private fun MainContent(
 
     Scaffold(
         snackbarHost = {
-            com.revakovskyi.giphy.core.presentation.components.DefaultSnackBarHost(
+            DefaultSnackBarHost(
                 snackBarHostState
             )
         },

@@ -4,7 +4,6 @@ import com.revakovskyi.giphy.core.presentation.ui.R
 
 interface QueryValidator {
 
-    fun appropriateLanguage(input: String): UiText?
     fun validate(input: String): UiText?
 
 }
@@ -12,27 +11,23 @@ interface QueryValidator {
 
 class QueryValidatorImpl : QueryValidator {
 
-    override fun appropriateLanguage(input: String): UiText? {
-        return if (
-            input.all {
-                it.isLetter() &&
-                        it in 'a'..'z' || it in 'A'..'Z' ||
-                        it.isWhitespace()
-            }
-        ) {
-            null
-        } else {
-            UiText.StringResource(R.string.error_not_english)
+    override fun validate(input: String): UiText? {
+        return when {
+            input.startsWith(" ") ->
+                UiText.StringResource(R.string.error_leading_space)
+
+            input.any { !(it.isLetterOrDigit() || it.isWhitespace() || it.isPunctuation()) } ->
+                UiText.StringResource(R.string.error_invalid_characters)
+
+            input.any { it.isLetter() && (it !in 'a'..'z' && it !in 'A'..'Z') } ->
+                UiText.StringResource(R.string.error_not_english)
+
+            else -> null
         }
     }
 
-    override fun validate(input: String): UiText? {
-        return when {
-            input.isBlank() -> UiText.StringResource(R.string.error_empty_input)
-            input.startsWith(" ") -> UiText.StringResource(R.string.error_leading_space)
-            input.any { !it.isLetterOrDigit() && !it.isWhitespace() } -> UiText.StringResource(R.string.error_invalid_characters)
-            else -> null
-        }
+    private fun Char.isPunctuation(): Boolean {
+        return this in "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
     }
 
 }

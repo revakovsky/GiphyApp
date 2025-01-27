@@ -19,9 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
@@ -29,11 +27,12 @@ import com.revakovskyi.giphy.app.R
 import com.revakovskyi.giphy.core.presentation.components.GiphyButton
 import com.revakovskyi.giphy.core.presentation.components.GradientBackground
 import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
+import com.revakovskyi.giphy.core.presentation.ui.theme.icons
 
 @Composable
 fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
 
-    com.revakovskyi.giphy.core.presentation.components.GradientBackground {
+    GradientBackground {
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -42,7 +41,7 @@ fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
         ) {
 
             Icon(
-                imageVector = ImageVector.vectorResource(id = R.drawable.wi_fi_off),
+                imageVector = MaterialTheme.icons.wiFi,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(100.dp)
@@ -71,7 +70,7 @@ fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
 
             }
 
-            com.revakovskyi.giphy.core.presentation.components.GiphyButton(
+            GiphyButton(
                 buttonText = stringResource(id = R.string.open_settings),
                 onClick = {
                     settingsLauncher.launch(Intent(Settings.ACTION_WIFI_SETTINGS))
@@ -88,7 +87,7 @@ fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
 @PreviewScreenSizes
 @Composable
 private fun PreviewSizesNoInternetScreen() {
-    com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme {
+    GiphyAppTheme {
         NoInternetScreen(
             settingsLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
