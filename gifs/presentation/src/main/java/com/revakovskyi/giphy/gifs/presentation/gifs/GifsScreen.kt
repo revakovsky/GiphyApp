@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.revakovskyi.giphy.core.presentation.components.GradientBackground
-import com.revakovskyi.giphy.core.presentation.theme.GiphyAppTheme
-import com.revakovskyi.giphy.core.presentation.uitls.SingleEvent
+import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
+import com.revakovskyi.giphy.core.presentation.ui.uitls.SingleEvent
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -21,7 +21,7 @@ fun GifsScreen(
 ) {
     val context = LocalContext.current
 
-    SingleEvent(flow = viewModel.event) {uiText ->
+    com.revakovskyi.giphy.core.presentation.ui.uitls.SingleEvent(flow = viewModel.event) { uiText ->
         val text = uiText.asString(context)
 
         Log.d("TAG_Max", "GifsScreen.kt: error - $text")
@@ -29,7 +29,7 @@ fun GifsScreen(
 
     }
 
-    GradientBackground {
+    com.revakovskyi.giphy.core.presentation.components.GradientBackground {
 
         Box(
             contentAlignment = Alignment.Center,
@@ -51,7 +51,7 @@ fun GifsScreen(
 @PreviewScreenSizes
 @Composable
 private fun PreviewSizesGifsScreen() {
-    GiphyAppTheme {
+    com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme {
         GifsScreen()
     }
 }

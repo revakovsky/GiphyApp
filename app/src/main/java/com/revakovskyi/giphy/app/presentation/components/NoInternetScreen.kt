@@ -28,12 +28,12 @@ import androidx.compose.ui.unit.dp
 import com.revakovskyi.giphy.app.R
 import com.revakovskyi.giphy.core.presentation.components.GiphyButton
 import com.revakovskyi.giphy.core.presentation.components.GradientBackground
-import com.revakovskyi.giphy.core.presentation.theme.GiphyAppTheme
+import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
 
 @Composable
 fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
 
-    GradientBackground {
+    com.revakovskyi.giphy.core.presentation.components.GradientBackground {
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -71,7 +71,7 @@ fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
 
             }
 
-            GiphyButton(
+            com.revakovskyi.giphy.core.presentation.components.GiphyButton(
                 buttonText = stringResource(id = R.string.open_settings),
                 onClick = {
                     settingsLauncher.launch(Intent(Settings.ACTION_WIFI_SETTINGS))
@@ -88,7 +88,7 @@ fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
 @PreviewScreenSizes
 @Composable
 private fun PreviewSizesNoInternetScreen() {
-    GiphyAppTheme {
+    com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme {
         NoInternetScreen(
             settingsLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()

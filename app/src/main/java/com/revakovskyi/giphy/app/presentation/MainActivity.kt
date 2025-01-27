@@ -27,11 +27,11 @@ import com.revakovskyi.giphy.app.R
 import com.revakovskyi.giphy.app.navigation.AppNavigation
 import com.revakovskyi.giphy.app.presentation.components.NoInternetScreen
 import com.revakovskyi.giphy.core.presentation.components.DefaultSnackBarHost
-import com.revakovskyi.giphy.core.presentation.theme.GiphyAppTheme
-import com.revakovskyi.giphy.core.presentation.uitls.SingleEvent
-import com.revakovskyi.giphy.core.presentation.uitls.SnackBarController
-import com.revakovskyi.giphy.core.presentation.uitls.snack_bar_models.SnackBarAction
-import com.revakovskyi.giphy.core.presentation.uitls.snack_bar_models.SnackBarEvent
+import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
+import com.revakovskyi.giphy.core.presentation.ui.uitls.SingleEvent
+import com.revakovskyi.giphy.core.presentation.ui.uitls.SnackBarController
+import com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarAction
+import com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarEvent
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
         ) { }
 
         setContent {
-            GiphyAppTheme {
+            com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme {
                 MainContent(
                     viewModel = viewModel,
                     settingsLauncher = settingsLauncher
@@ -84,14 +84,14 @@ private fun MainContent(
     val snackBarHostState = remember { SnackbarHostState() }
 
 
-    SingleEvent(flow = viewModel.event) { event ->
+    com.revakovskyi.giphy.core.presentation.ui.uitls.SingleEvent(flow = viewModel.event) { event ->
         when (event) {
             MainEvent.ShowInternetNotification -> {
                 coroutineScope.launch {
-                    SnackBarController.sendEvent(
-                        SnackBarEvent(
+                    com.revakovskyi.giphy.core.presentation.ui.uitls.SnackBarController.sendEvent(
+                        com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarEvent(
                             message = context.getString(R.string.no_internet_connection),
-                            action = SnackBarAction(
+                            action = com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarAction(
                                 name = context.getString(R.string.settings),
                                 action = { settingsLauncher?.launch(Intent(Settings.ACTION_WIFI_SETTINGS)) }
                             )
@@ -104,7 +104,11 @@ private fun MainContent(
 
 
     Scaffold(
-        snackbarHost = { DefaultSnackBarHost(snackBarHostState) },
+        snackbarHost = {
+            com.revakovskyi.giphy.core.presentation.components.DefaultSnackBarHost(
+                snackBarHostState
+            )
+        },
         modifier = Modifier.fillMaxSize()
     ) { _ ->
 

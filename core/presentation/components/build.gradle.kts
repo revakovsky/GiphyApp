@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.revakovskyi.giphy.gifs.presentation"
+    namespace = "com.revakovskyi.giphy.core.presentation.components"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -40,8 +40,6 @@ dependencies {
 
     // Modules
     implementation(projects.core.presentation.ui)
-    implementation(projects.core.presentation.components)
-    implementation(projects.gifs.domain)
 
     // Core
     implementation(libs.bundles.android.library.core)
@@ -50,11 +48,5 @@ dependencies {
     implementation(libs.bundles.compose)
     implementation(platform(libs.androidx.compose.bom))
     debugImplementation(libs.bundles.compose.debug)
-
-    // Lifecycle
-    implementation(libs.bundles.lifecycle)
-
-    // Koin
-    implementation(libs.bundles.koin)
 
 }

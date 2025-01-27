@@ -27,12 +27,13 @@ rootProject.name = "GiphyApp"
 
 include(":app")
 
-include(":gifs:data")
-include(":gifs:domain")
-include(":gifs:presentation")
-
 include(":core:network")
 include(":core:database")
 include(":core:data")
 include(":core:domain")
-include(":core:presentation")
+include(":core:presentation:ui")
+include(":core:presentation:components")
+
+include(":gifs:data")
+include(":gifs:domain")
+include(":gifs:presentation")

@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revakovskyi.giphy.core.domain.util.Result
-import com.revakovskyi.giphy.core.presentation.uitls.UiText
-import com.revakovskyi.giphy.core.presentation.uitls.asUiText
+import com.revakovskyi.giphy.core.presentation.ui.uitls.UiText
+import com.revakovskyi.giphy.core.presentation.ui.uitls.asUiText
 import com.revakovskyi.giphy.gifs.domain.GifsRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
@@ -16,7 +16,7 @@ class GifsViewModel(
     private val gifsRepository: GifsRepository,
 ) : ViewModel() {
 
-    private val _event = Channel<UiText>()
+    private val _event = Channel<com.revakovskyi.giphy.core.presentation.ui.uitls.UiText>()
     val event = _event.receiveAsFlow()
 
     init {
