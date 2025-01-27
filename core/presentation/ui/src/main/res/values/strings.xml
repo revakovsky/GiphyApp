@@ -14,4 +14,9 @@
     <string name="error_no_internet">No internet connection. Please connect to the internet and try again</string>
     <string name="error_serialization">Serialization error. There was a problem processing the data</string>
     <string name="error_unknown">Unknown error. Something went wrong. Please try again</string>
+
+    <string name="error_empty_input">Сan not be empty!</string>
+    <string name="error_leading_space">Сan not start with a space!</string>
+    <string name="error_invalid_characters">Invalid characters</string>
+    <string name="error_not_english">Text must be in English</string>
 </resources>
