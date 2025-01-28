@@ -71,7 +71,7 @@ fun NoInternetScreen(settingsLauncher: ActivityResultLauncher<Intent>) {
             }
 
             GiphyButton(
-                buttonText = stringResource(id = R.string.open_settings),
+                buttonText = stringResource(id = R.string.settings),
                 onClick = {
                     settingsLauncher.launch(Intent(Settings.ACTION_WIFI_SETTINGS))
                 }

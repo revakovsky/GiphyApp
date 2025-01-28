@@ -2,12 +2,12 @@ package com.revakovskyi.giphy.app.navigation
 
 import kotlinx.serialization.Serializable
 
-sealed interface Destinations {
+sealed interface Routes {
 
     @Serializable
-    data object Gifs : Destinations
+    data object Gifs : Routes
 
     @Serializable
-    data class GifDetail(val url: String) : Destinations
+    data class Original(val gifId: String) : Routes
 
 }

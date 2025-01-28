@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.revakovskyi.giphy.gifs.presentation.gifs.GifsScreenRoot
 
 private const val TRANSITION_DURATION = 300
@@ -17,7 +18,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Destinations.Gifs,
+        startDestination = Routes.Gifs,
         enterTransition = {
             slideIntoContainer(
                 AnimatedContentTransitionScope.SlideDirection.Start,
@@ -44,12 +45,18 @@ fun AppNavigation() {
         }
     ) {
 
-        composable<Destinations.Gifs> {
-            GifsScreenRoot()
+        composable<Routes.Gifs> {
+            GifsScreenRoot(
+                openOriginalGif = { gifId ->
+                    navController.navigate(Routes.Original(gifId))
+                }
+            )
         }
 
-        composable<Destinations.GifDetail> {
-            // TODO: create a screen
+        composable<Routes.Original> {
+            val gifId = it.toRoute<Routes.Original>().gifId
+
+            // TODO: implement next screen
         }
 
     }

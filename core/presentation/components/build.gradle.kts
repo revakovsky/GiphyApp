@@ -49,4 +49,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     debugImplementation(libs.bundles.compose.debug)
 
+    // Coil
+    implementation(libs.bundles.coil)
+
 }

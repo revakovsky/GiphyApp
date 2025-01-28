@@ -3,4 +3,11 @@
     <string name="successfully_deleted">Successfully deleted!</string>
     <string name="input_a_searching_query">Input a searching query</string>
     <string name="your_query">your query..</string>
+    <string name="cancel">Cancel</string>
+    <string name="search">Search</string>
+    <string name="input_a_searching_query_to_get_new_gifs">Input a searching query to get new gifs</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <string name="first">First</string>
+    <string name="delete_gif">Delete gif</string>
 </resources>

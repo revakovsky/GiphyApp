@@ -14,6 +14,7 @@ private val DarkColorScheme = darkColorScheme(
     secondary = GiphyBlue,
     onSecondary = GiphyPinkLight,
     background = GiphyBlack,
+    onBackground = GiphyGreen,
 )
 
 

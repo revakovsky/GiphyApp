@@ -25,6 +25,9 @@ class Icons {
     val inputBold: ImageVector
         @Composable get() = ImageVector.vectorResource(id = R.drawable.input_bold)
 
+    val imageWarning: ImageVector
+        @Composable get() = ImageVector.vectorResource(id = R.drawable.image_warning)
+
 }
 
 val LocalIcons = compositionLocalOf { Icons() }

@@ -8,7 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
 
@@ -17,6 +19,9 @@ fun GiphyButton(
     modifier: Modifier = Modifier,
     buttonText: String,
     enabled: Boolean = true,
+    buttonWidth: Dp = 150.dp,
+    buttonHeight: Dp = 48.dp,
+    buttonDefaultColor: Color = MaterialTheme.colorScheme.secondary,
     onClick: () -> Unit,
 ) {
 
@@ -24,8 +29,8 @@ fun GiphyButton(
         onClick = { onClick() },
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.textButtonColors(
-            containerColor = MaterialTheme.colorScheme.secondary,
-            disabledContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
+            containerColor = buttonDefaultColor,
+            disabledContainerColor = buttonDefaultColor.copy(alpha = 0.2f),
         ),
         elevation = ButtonDefaults.buttonElevation(
             defaultElevation = 5.dp,
@@ -33,8 +38,8 @@ fun GiphyButton(
         ),
         enabled = enabled,
         modifier = modifier
-            .width(200.dp)
-            .height(56.dp)
+            .width(buttonWidth)
+            .height(buttonHeight)
     ) {
 
         Text(
