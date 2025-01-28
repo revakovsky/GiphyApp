@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
 
 internal class LocalDbManager(
     private val gifsDao: GifsDao,
@@ -31,7 +32,7 @@ internal class LocalDbManager(
     private val deletedGifsDao: DeletedGifsDao,
 ) : DbManager {
 
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val _lastQuery = MutableStateFlow<SearchQuery?>(null)
     override val lastQuery: StateFlow<SearchQuery?> = _lastQuery.asStateFlow()
@@ -39,14 +40,10 @@ internal class LocalDbManager(
     private val _deletedGifIds = MutableStateFlow<List<String>>(emptyList())
     override val deletedGifIds: StateFlow<List<String>> = _deletedGifIds.asStateFlow()
 
-    private val _gifs = MutableStateFlow<List<Gif>>(emptyList())
-    override val gifs: StateFlow<List<Gif>> = _gifs.asStateFlow()
-
 
     init {
         observeForLastQuery()
         observeForDeletedGifs()
-        observeForNewGifs()
     }
 
 
@@ -63,80 +60,66 @@ internal class LocalDbManager(
         searchQueryDao.saveQuery(entity.toEntity())
     }
 
-    override suspend fun updateGifsInLocalDb(filteredGifs: List<Gif>): EmptyDataResult<DataError.Local> {
-
-        Log.d("TAG_Max", "LocalDbManager.kt: updateGifsInLocalDb")
-        Log.d("TAG_Max", "")
-
-        return try {
-            gifsDao.saveGifs(
-                filteredGifs.map {
-                    it.toEntity(lastQuery.value?.id ?: 1)
-                }
-            )
-
-            Log.d("TAG_Max", "LocalDbManager.kt: updateGifsInLocalDb - result success")
-            Log.d("TAG_Max", "")
-
-            Result.Success(Unit)
-        } catch (e: SQLiteFullException) {
-
-            Log.d(
-                "TAG_Max",
-                "LocalDbManager.kt: updateGifsInLocalDb - result error SQLiteFullException"
-            )
-            Log.d("TAG_Max", "")
-
-            e.printStackTrace()
-            Result.Error(DataError.Local.DISK_FULL)
-        } catch (e: Exception) {
-
-            Log.d("TAG_Max", "LocalDbManager.kt: updateGifsInLocalDb - result error UNKNOWN")
-            Log.d("TAG_Max", "LocalDbManager.kt: ${e.localizedMessage}")
-            Log.d("TAG_Max", "")
-
-            e.printStackTrace()
-            Result.Error(DataError.Local.UNKNOWN)
-        }
-    }
-
     override fun insertDeletedGif(deletedGif: DeletedGif): Flow<EmptyDataResult<DataError.Local>> {
         return flow {
             try {
                 deletedGifsDao.insertDeletedGif(deletedGif.toEntity())
                 emit(Result.Success(Unit))
             } catch (e: SQLiteFullException) {
+
+                Log.d(
+                    "TAG_Max",
+                    "LocalDbManager.kt: SQLiteFullException 1 - ${e.printStackTrace()}"
+                )
+                Log.d("TAG_Max", "")
+
                 e.printStackTrace()
                 emit(Result.Error(DataError.Local.DISK_FULL))
             } catch (e: Exception) {
+
+                Log.d("TAG_Max", "LocalDbManager.kt: Exception 1 - ${e.printStackTrace()}")
+                Log.d("TAG_Max", "")
+
                 e.printStackTrace()
                 emit(Result.Error(DataError.Local.UNKNOWN))
             }
         }
     }
 
-    override suspend fun clearPreviousGifs(): Flow<EmptyDataResult<DataError.Local>> {
-        return flow {
-            try {
-                gifsDao.clearGifs()
-                emit(Result.Success(Unit))
-            } catch (e: SQLiteFullException) {
-                e.printStackTrace()
-                emit(Result.Error(DataError.Local.DISK_FULL))
-            } catch (e: Exception) {
-                e.printStackTrace()
-                emit(Result.Error(DataError.Local.UNKNOWN))
-            }
+    override suspend fun saveQueryAndGifs(
+        query: SearchQuery,
+        gifs: List<Gif>,
+        clearPrevious: Boolean,
+    ): Result<List<Gif>, DataError> {
+
+        Log.d("TAG_Max", "LocalDbManager.kt: saveQueryAndGifs")
+        Log.d("TAG_Max", "")
+
+        return try {
+            if (clearPrevious) gifsDao.clearGifs()
+            searchQueryDao.saveQuery(query.toEntity())
+            gifsDao.saveGifs(gifs.map { it.toEntity(query.id) })
+
+            Log.d("TAG_Max", "LocalDbManager.kt: updateGifsInLocalDb - result success")
+            Log.d("TAG_Max", "")
+
+            Result.Success(loadGifsByQuery(queryId = query.id))
+        } catch (e: SQLiteFullException) {
+            e.printStackTrace()
+            Result.Error(DataError.Local.DISK_FULL)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.Error(DataError.Local.UNKNOWN)
         }
+    }
+
+    override suspend fun loadGifsByQuery(queryId: Long): List<Gif> = withContext(Dispatchers.IO) {
+        gifsDao.getGifsByQuery(queryId).map { it.toDomain() }
     }
 
     private fun observeForLastQuery() {
         searchQueryDao.getLastQuery()
             .onEach { query ->
-
-                Log.d("TAG_Max", "LocalDbManager.kt: observeLastQuery = $query")
-                Log.d("TAG_Max", "")
-
                 _lastQuery.value = query?.toDomain()
             }.launchIn(scope)
     }
@@ -144,22 +127,7 @@ internal class LocalDbManager(
     private fun observeForDeletedGifs() {
         deletedGifsDao.getDeletedGifIdsByQuery(lastQuery.value?.query ?: "")
             .onEach { deletedGifs ->
-
-                Log.d("TAG_Max", "LocalDbManager.kt: deletedGifs = $deletedGifs")
-                Log.d("TAG_Max", "")
-
                 _deletedGifIds.value = deletedGifs
-            }.launchIn(scope)
-    }
-
-    private fun observeForNewGifs() {
-        gifsDao.getGifsByQuery(lastQuery.value?.id ?: 1)
-            .onEach { gifEntities ->
-
-                Log.d("TAG_Max", "LocalDbManager.kt: gifEntities = $gifEntities")
-                Log.d("TAG_Max", "")
-
-                _gifs.value = gifEntities.map { it.toDomain() }
             }.launchIn(scope)
     }
 

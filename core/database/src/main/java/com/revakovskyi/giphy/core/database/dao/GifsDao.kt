@@ -16,7 +16,7 @@ interface GifsDao {
     suspend fun saveGifs(gifs: List<GifEntity>)
 
     @Query("SELECT * FROM gifs WHERE query_id = :queryId")
-    fun getGifsByQuery(queryId: Long): Flow<List<GifEntity>>
+    suspend fun getGifsByQuery(queryId: Long): List<GifEntity>
 
     @Query("DELETE FROM gifs")
     suspend fun clearGifs()

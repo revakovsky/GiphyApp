@@ -28,6 +28,7 @@ import com.revakovskyi.giphy.gifs.presentation.gifs.components.GifsSection
 import com.revakovskyi.giphy.gifs.presentation.gifs.components.PageButtonsSection
 import com.revakovskyi.giphy.gifs.presentation.gifs.components.SearchingFieldWithButtonsSection
 import com.revakovskyi.giphy.gifs.presentation.gifs.components.UserHint
+import com.revakovskyi.giphy.gifs.presentation.gifs.utils.PageDirection
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -40,10 +41,6 @@ fun GifsScreenRoot(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    BackHandler {
-        (context as ComponentActivity).finish()
-    }
 
     SingleEvent(flow = viewModel.event) { event ->
         when (event) {
@@ -80,12 +77,23 @@ private fun GifsScreenScreen(
     state: GifsState,
     onAction: (GifsAction) -> Unit,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val gridState = rememberLazyGridState()
+
+
+    BackHandler {
+        if (state.currentPage > 1) {
+            scope.launch { gridState.animateScrollToItem(1) }
+            onAction(GifsAction.GetGifsForPage(PageDirection.Previous))
+        } else (context as ComponentActivity).finish()
+    }
 
     GradientBackground(hasToolbar = false) {
 
         SearchingFieldWithButtonsSection(
             state = state,
+            gridState = gridState,
             onAction = onAction
         )
 
@@ -124,6 +132,7 @@ private fun GifsScreenScreen(
     ) {
         PageButtonsSection(
             state = state,
+            gridState = gridState,
             onAction = onAction
         )
     }

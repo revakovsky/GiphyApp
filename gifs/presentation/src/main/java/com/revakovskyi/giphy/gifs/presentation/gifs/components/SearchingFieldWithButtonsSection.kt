@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -27,15 +29,18 @@ import com.revakovskyi.giphy.core.presentation.ui.uitls.rememberImeState
 import com.revakovskyi.giphy.gifs.presentation.R
 import com.revakovskyi.giphy.gifs.presentation.gifs.GifsAction
 import com.revakovskyi.giphy.gifs.presentation.gifs.GifsState
+import kotlinx.coroutines.launch
 
 @Composable
 fun SearchingFieldWithButtonsSection(
     state: GifsState,
+    gridState: LazyGridState,
     onAction: (action: GifsAction) -> Unit,
 ) {
     val localFocusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    val scope = rememberCoroutineScope()
     val imeStateOpen by rememberImeState()
 
     LaunchedEffect(imeStateOpen) {
@@ -56,7 +61,10 @@ fun SearchingFieldWithButtonsSection(
             error = state.errorMessage?.asString(),
             onTextChange = { input -> onAction(GifsAction.QueryEntered(input)) },
             onClearClick = { onAction(GifsAction.ClearQuery) },
-            onDoneClick = { onAction(GifsAction.Search) },
+            onDoneClick = {
+                scope.launch { gridState.animateScrollToItem(1) }
+                onAction(GifsAction.Search)
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -91,6 +99,7 @@ fun SearchingFieldWithButtonsSection(
                     buttonDefaultColor = MaterialTheme.colorScheme.onBackground,
                     enabled = state.errorMessage == null && state.searchingQuery.isNotEmpty(),
                     onClick = {
+                        scope.launch { gridState.animateScrollToItem(1) }
                         keyboardController?.hide()
                         localFocusManager.clearFocus()
                         onAction(GifsAction.Search)

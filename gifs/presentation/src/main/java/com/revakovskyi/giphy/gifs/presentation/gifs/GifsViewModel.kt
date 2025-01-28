@@ -3,6 +3,7 @@ package com.revakovskyi.giphy.gifs.presentation.gifs
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.revakovskyi.giphy.core.domain.util.DataError
 import com.revakovskyi.giphy.core.domain.util.Result
 import com.revakovskyi.giphy.core.presentation.ui.uitls.QueryValidator
 import com.revakovskyi.giphy.core.presentation.ui.uitls.UiText
@@ -13,7 +14,11 @@ import com.revakovskyi.giphy.gifs.presentation.gifs.utils.PageDirection
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -25,6 +30,9 @@ class GifsViewModel(
 
     private val _state = MutableStateFlow(GifsState())
     val state = _state.asStateFlow()
+
+    private val _currentInputQuery = MutableStateFlow("")
+    private val currentInputQuery = _currentInputQuery.asStateFlow()
 
     private val _event = Channel<GifsEvent>()
     val event = _event.receiveAsFlow()
@@ -47,36 +55,57 @@ class GifsViewModel(
     }
 
     private fun observeForGifs() {
-        gifsRepository.getGifs(
-            searchingQuery = state.value.searchingQuery,
-            page = state.value.currentPage
-        )
-            .onEach { result ->
-                when (result) {
-                    is Result.Error -> {
-                        _state.update { it.copy(isLoading = false) }
-                        _event.send(GifsEvent.ShowNotification(result.error.asUiText()))
-                    }
+        combine(
+            currentInputQuery,
+            state.map { it.currentPage }.distinctUntilChanged()
+        ) { query, page ->
 
-                    is Result.Success -> {
+            Log.d("TAG_Max", "GifsViewModel.kt: update query or page")
+            Log.d("TAG_Max", "GifsViewModel.kt: query = $query")
+            Log.d("TAG_Max", "GifsViewModel.kt: page = $page")
+            Log.d("TAG_Max", "")
 
-                        Log.d("TAG_Max", "GifsViewModel.kt: gifs = ${result.data}")
-                        Log.d("TAG_Max", "")
+            query to page
+        }.flatMapLatest { (query, page) ->
+            gifsRepository.getGifs(searchingQuery = query, page = page)
+        }.onEach { result ->
+            when (result) {
+                is Result.Error -> {
+                    _state.update { it.copy(isLoading = false) }
 
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                gifs = result.data
-                            )
-                        }
+                    when (result.error) {
+                        DataError.Local.THE_SAME_DATA -> Unit
+                        else -> _event.send(GifsEvent.ShowNotification(result.error.asUiText()))
                     }
                 }
-            }.launchIn(viewModelScope)
+
+                is Result.Success -> {
+
+                    Log.d("TAG_Max", "GifsViewModel.kt: gifs = ${result.data}")
+                    Log.d("TAG_Max", "")
+
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            gifs = result.data
+                        )
+                    }
+                }
+            }
+        }.launchIn(viewModelScope)
     }
 
     private fun getGifsBySearchingQuery() {
-        _state.update { it.copy(isLoading = true) }
-        observeForGifs()
+        if (_currentInputQuery.value != state.value.searchingQuery) {
+            _state.update {
+                it.copy(
+                    isLoading = true,
+                    currentPage = 1,
+                    errorMessage = null
+                )
+            }
+            _currentInputQuery.update { state.value.searchingQuery }
+        }
     }
 
     private fun clearSearchingQuery() {
@@ -107,11 +136,6 @@ class GifsViewModel(
                 }
             )
         }
-
-        gifsRepository.getGifs(
-            searchingQuery = state.value.searchingQuery,
-            page = state.value.currentPage
-        )
     }
 
     private fun openOriginalGif(gifId: String) {

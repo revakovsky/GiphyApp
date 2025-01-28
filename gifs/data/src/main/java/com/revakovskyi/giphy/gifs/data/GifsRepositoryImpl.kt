@@ -15,6 +15,13 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 
+/***
+ * Equal to the value of the amount of data downloaded from the Internet at a time,
+ *  * specified in the [ApiService.LIMIT] constant.
+ *  *
+ *  * @see ApiService.LIMIT
+ */
+private const val AMOUNT_TO_DOWNLOAD = 25
 private const val DEFAULT_AMOUNT_PER_PAGE = 24
 
 class GifsRepositoryImpl(
@@ -24,7 +31,6 @@ class GifsRepositoryImpl(
 
     private val lastQuery: StateFlow<SearchQuery?> = dbManager.lastQuery
     private val deletedGifIds: StateFlow<List<String>> = dbManager.deletedGifIds
-    private val gifs: StateFlow<List<Gif>> = dbManager.gifs
 
 
     override fun isDbEmpty(): Flow<Boolean> = dbManager.isDbEmpty()
@@ -41,7 +47,7 @@ class GifsRepositoryImpl(
                     Log.d("TAG_Max", "GifsRepositoryImpl.kt: 2")
                     Log.d("TAG_Max", "")
 
-                    handleEmptyQuery()
+                    handleEmptyQuery(page)
                 } else if (searchingQuery == lastQuery.value?.query) {
 
                     Log.d("TAG_Max", "GifsRepositoryImpl.kt: 3")
@@ -80,59 +86,91 @@ class GifsRepositoryImpl(
         )
     }
 
-    private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleEmptyQuery() {
+    private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleEmptyQuery(page: Int) {
 
         Log.d("TAG_Max", "GifsRepositoryImpl.kt: lastQuery = ${lastQuery.value?.query}")
         Log.d("TAG_Max", "")
 
-        if (lastQuery.value != null) {
+        lastQuery.value?.let { query ->
+            if (page > query.currentPage) {
 
-            Log.d("TAG_Max", "GifsRepositoryImpl.kt: gifs = $gifs")
-            Log.d("TAG_Max", "")
-
-            if (gifs.value.isNotEmpty()) {
-                emit(
-                    Result.Success(
-                        gifs.value.take(DEFAULT_AMOUNT_PER_PAGE)
-                    )
-                )
-            } else {
-
-                Log.d("TAG_Max", "GifsRepositoryImpl.kt: can't read gifs from db with last query")
+                Log.d("TAG_Max", "GifsRepositoryImpl.kt: a new page for the last query")
+                Log.d("TAG_Max", "GifsRepositoryImpl.kt: page = $page")
+                Log.d("TAG_Max", "GifsRepositoryImpl.kt: lastPage = ${query.currentPage}")
                 Log.d("TAG_Max", "")
 
-                emit(Result.Error(DataError.Local.UNKNOWN))
+                handleSameQuery(page)
+            } else {
+                dbManager.updateCurrentPage(page)
+                val gifs = dbManager.loadGifsByQuery(queryId = query.id)
+
+                Log.d("TAG_Max", "GifsRepositoryImpl.kt: the same page for the last query")
+                Log.d("TAG_Max", "GifsRepositoryImpl.kt: gifs = $gifs")
+                Log.d("TAG_Max", "")
+
+                if (gifs.isNotEmpty()) {
+                    emit(
+                        Result.Success(
+                            gifs.take(DEFAULT_AMOUNT_PER_PAGE)
+                        )
+                    )
+                } else {
+
+                    Log.d(
+                        "TAG_Max",
+                        "GifsRepositoryImpl.kt: can't read gifs from db with last query"
+                    )
+                    Log.d("TAG_Max", "")
+
+                    emit(Result.Error(DataError.Local.UNKNOWN))
+                }
             }
-        } else {
-
-            Log.d("TAG_Max", "GifsRepositoryImpl.kt: no queries were at all")
-            Log.d("TAG_Max", "")
-
-            emit(Result.Success(emptyList()))
-        }
+        } ?: emit(Result.Success(emptyList()))
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleSameQuery(page: Int) {
         lastQuery.value?.let { query ->
-            val startIndex = (page - 1) * DEFAULT_AMOUNT_PER_PAGE
-            val lastIndex = startIndex + DEFAULT_AMOUNT_PER_PAGE
+            if (page != query.currentPage) {
+                val offsetToLoad = (page - 1) * AMOUNT_TO_DOWNLOAD
+                val dropGifsNumber = (page - 1) * DEFAULT_AMOUNT_PER_PAGE
+                val lastElementNumber = dropGifsNumber + DEFAULT_AMOUNT_PER_PAGE
 
-            if (startIndex >= gifs.value.size || lastIndex > gifs.value.lastIndex) {
+                val gifs = dbManager.loadGifsByQuery(queryId = query.id)
 
-                Log.d("TAG_Max", "GifsRepositoryImpl.kt: load gifs from remote for the page $page")
-                Log.d("TAG_Max", "GifsRepositoryImpl.kt: deletedGifIds = ${deletedGifIds.value}")
+                if (dropGifsNumber >= gifs.size || lastElementNumber > gifs.lastIndex) {
+
+                    Log.d(
+                        "TAG_Max",
+                        "GifsRepositoryImpl.kt: load gifs from remote for the page $page"
+                    )
+                    Log.d(
+                        "TAG_Max",
+                        "GifsRepositoryImpl.kt: deletedGifIds = ${deletedGifIds.value}"
+                    )
+                    Log.d("TAG_Max", "")
+
+                    val result =
+                        networkManager.loadGifsFromRemote(query = query, offset = offsetToLoad)
+                    handleNetworkResult(
+                        result = result,
+                        skipGifsAmount = dropGifsNumber,
+                        query = query
+                    )
+                } else {
+                    emitPaginatedGifsFromDb(
+                        gifs = gifs,
+                        skipGifsAmount = dropGifsNumber
+                    )
+                }
+
+                dbManager.updateCurrentPage(page)
+            } else {
+
+                Log.d("TAG_Max", "GifsRepositoryImpl.kt: the same page - don't do anything")
                 Log.d("TAG_Max", "")
 
-                val result = networkManager.loadGifsFromRemote(query = query, offset = startIndex)
-                handleNetworkResult(
-                    result = result,
-                    skipGifsAmount = startIndex
-                )
-            } else {
-                emitPaginatedGifsFromDb(skipGifsAmount = startIndex)
+                emit(Result.Error(DataError.Local.THE_SAME_DATA))
             }
-
-            dbManager.updateCurrentPage(page)
         }
     }
 
@@ -145,14 +183,14 @@ class GifsRepositoryImpl(
         Log.d("TAG_Max", "GifsRepositoryImpl.kt: searchingQuery = $searchingQuery")
         Log.d("TAG_Max", "")
 
-        dbManager.saveNewQuery(query)
-
         Log.d("TAG_Max", "GifsRepositoryImpl.kt: lastQuery = ${lastQuery.value}")
         Log.d("TAG_Max", "")
 
         val result = networkManager.loadGifsFromRemote(query = query, offset = offset)
+
         handleNetworkResult(
             result = result,
+            query = query,
             skipGifsAmount = offset,
             shouldClearPreviousGifs = true,
         )
@@ -160,6 +198,7 @@ class GifsRepositoryImpl(
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleNetworkResult(
         result: Result<List<Gif>, DataError.Network>,
+        query: SearchQuery,
         skipGifsAmount: Int,
         shouldClearPreviousGifs: Boolean = false,
     ) {
@@ -170,19 +209,24 @@ class GifsRepositoryImpl(
                 Log.d("TAG_Max", "")
 
                 val filteredGifEntities = result.data
-                    .filter { data -> data.id !in deletedGifIds.value }
-
-                if (shouldClearPreviousGifs) dbManager.clearPreviousGifs()
+                    .filterNot { it.id in deletedGifIds.value }
 
                 Log.d(
                     "TAG_Max",
                     "GifsRepositoryImpl.kt: filteredGifEntities = $filteredGifEntities"
                 )
+                Log.d("TAG_Max", "GifsRepositoryImpl.kt: resultDataSize = ${result.data.size}")
+                Log.d(
+                    "TAG_Max",
+                    "GifsRepositoryImpl.kt: unique GIFs count = ${result.data.distinctBy { it.id }.size}"
+                )
                 Log.d("TAG_Max", "")
 
-                saveNewGifsIntoDb(
+                saveQueryAndGifs(
                     filteredGifEntities = filteredGifEntities,
-                    skipGifsAmount = skipGifsAmount
+                    skipGifsAmount = skipGifsAmount,
+                    query = query,
+                    shouldClearPreviousGifs = shouldClearPreviousGifs
                 )
             }
 
@@ -196,17 +240,42 @@ class GifsRepositoryImpl(
         }
     }
 
-    private suspend fun FlowCollector<Result<List<Gif>, DataError>>.saveNewGifsIntoDb(
+    private suspend fun FlowCollector<Result<List<Gif>, DataError>>.saveQueryAndGifs(
         filteredGifEntities: List<Gif>,
         skipGifsAmount: Int,
+        query: SearchQuery,
+        shouldClearPreviousGifs: Boolean,
     ) {
-        when (val updatingResult = dbManager.updateGifsInLocalDb(filteredGifEntities)) {
-            is Result.Error -> emit(updatingResult)
-            is Result.Success -> emitPaginatedGifsFromDb(skipGifsAmount)
+        val updatingResult = dbManager.saveQueryAndGifs(
+            query = query,
+            gifs = filteredGifEntities,
+            clearPrevious = shouldClearPreviousGifs,
+        )
+
+        when (updatingResult) {
+            is Result.Error -> {
+
+                Log.d(
+                    "TAG_Max",
+                    "GifsRepositoryImpl.kt: problem with gif saving - ${updatingResult.error}"
+                )
+                Log.d("TAG_Max", "")
+
+                emit(updatingResult)
+            }
+
+            is Result.Success -> {
+
+                Log.d("TAG_Max", "GifsRepositoryImpl.kt: saved into db successfully")
+                Log.d("TAG_Max", "")
+
+                emitPaginatedGifsFromDb(updatingResult.data, skipGifsAmount)
+            }
         }
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.emitPaginatedGifsFromDb(
+        gifs: List<Gif>,
         skipGifsAmount: Int,
     ) {
 
@@ -218,7 +287,7 @@ class GifsRepositoryImpl(
 
         emit(
             Result.Success(
-                gifs.value
+                gifs
                     .drop(skipGifsAmount)
                     .take(DEFAULT_AMOUNT_PER_PAGE)
             )

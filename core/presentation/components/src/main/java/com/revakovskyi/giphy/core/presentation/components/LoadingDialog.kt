@@ -27,7 +27,7 @@ fun LoadingDialog() {
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .background(
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f),
                     shape = MaterialTheme.shapes.medium
                 )
                 .padding(25.dp)
