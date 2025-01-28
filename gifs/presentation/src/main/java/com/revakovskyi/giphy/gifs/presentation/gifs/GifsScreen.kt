@@ -6,6 +6,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -114,11 +116,17 @@ private fun GifsScreenScreen(
 
     }
 
-    PageButtonsSection(
-        state = state,
-        gridState = gridState,
-        onAction = onAction
-    )
+    AnimatedVisibility(
+        visible = !gridState.canScrollForward && state.gifs.isNotEmpty(),
+        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+        label = "",
+    ) {
+        PageButtonsSection(
+            state = state,
+            onAction = onAction
+        )
+    }
 
 }
 
