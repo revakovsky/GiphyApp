@@ -15,10 +15,7 @@ interface GifsDao {
     @Upsert
     suspend fun saveGifs(gifs: List<GifEntity>)
 
-    @Query("SELECT * FROM gifs WHERE query_id = :queryId")
-    suspend fun getGifsByQuery(queryId: Long): List<GifEntity>
-
-    @Query("DELETE FROM gifs")
-    suspend fun clearGifs()
+    @Query("SELECT * FROM gifs WHERE query_id = :queryId LIMIT :limit OFFSET :offset")
+    suspend fun getGifsByQuery(queryId: Long, limit: Int, offset: Int): List<GifEntity>
 
 }

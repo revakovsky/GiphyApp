@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.revakovskyi.giphy.core.presentation.components.GiphyButton
 import com.revakovskyi.giphy.core.presentation.components.GiphyIconButton
+import com.revakovskyi.giphy.gifs.domain.Constants.DEFAULT_AMOUNT_ON_PAGE
 import com.revakovskyi.giphy.gifs.presentation.R
 import com.revakovskyi.giphy.gifs.presentation.gifs.GifsAction
 import com.revakovskyi.giphy.gifs.presentation.gifs.GifsState
@@ -48,7 +49,7 @@ fun PageButtonsSection(
                     contentDescription = stringResource(R.string.previous),
                     onClick = {
                         scope.launch { gridState.animateScrollToItem(1) }
-                        onAction(GifsAction.GetGifsForPage(PageDirection.Previous))
+                        onAction(GifsAction.ChangePage(PageDirection.Previous))
                     },
                 )
             }
@@ -59,18 +60,20 @@ fun PageButtonsSection(
                     buttonWidth = 100.dp,
                     onClick = {
                         scope.launch { gridState.animateScrollToItem(1) }
-                        onAction(GifsAction.GetGifsForPage(PageDirection.First))
+                        onAction(GifsAction.ChangePage(PageDirection.First))
                     }
                 )
             }
 
-            GiphyIconButton(
-                contentDescription = stringResource(R.string.next),
-                onClick = {
-                    scope.launch { gridState.animateScrollToItem(1) }
-                    onAction(GifsAction.GetGifsForPage(PageDirection.Next))
-                },
-            )
+            if (state.gifs.size >= DEFAULT_AMOUNT_ON_PAGE) {
+                GiphyIconButton(
+                    contentDescription = stringResource(R.string.next),
+                    onClick = {
+                        scope.launch { gridState.animateScrollToItem(1) }
+                        onAction(GifsAction.ChangePage(PageDirection.Next))
+                    },
+                )
+            }
         }
 
     }

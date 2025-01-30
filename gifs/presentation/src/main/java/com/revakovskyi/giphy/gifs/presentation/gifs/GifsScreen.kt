@@ -85,7 +85,7 @@ private fun GifsScreenScreen(
     BackHandler {
         if (state.currentPage > 1) {
             scope.launch { gridState.animateScrollToItem(1) }
-            onAction(GifsAction.GetGifsForPage(PageDirection.Previous))
+            onAction(GifsAction.ChangePage(PageDirection.Previous))
         } else (context as ComponentActivity).finish()
     }
 

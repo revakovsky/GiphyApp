@@ -1,11 +1,9 @@
 package com.revakovskyi.giphy.core.data.mapper
 
-import com.revakovskyi.giphy.core.database.entities.DeletedGifEntity
 import com.revakovskyi.giphy.core.database.entities.GifEntity
 import com.revakovskyi.giphy.core.database.entities.SearchQueryEntity
-import com.revakovskyi.giphy.core.domain.gifs.models.DeletedGif
-import com.revakovskyi.giphy.core.domain.gifs.models.Gif
-import com.revakovskyi.giphy.core.domain.gifs.models.SearchQuery
+import com.revakovskyi.giphy.core.domain.gifs.Gif
+import com.revakovskyi.giphy.core.domain.gifs.SearchQuery
 
 fun SearchQueryEntity.toDomain(): SearchQuery {
     return SearchQuery(
@@ -17,30 +15,25 @@ fun SearchQueryEntity.toDomain(): SearchQuery {
 
 fun SearchQuery.toEntity(): SearchQueryEntity {
     return SearchQueryEntity(
-        id = id,
         query = query,
         currentPage = currentPage
-    )
-}
-
-fun DeletedGif.toEntity(): DeletedGifEntity {
-    return DeletedGifEntity(
-        gifId = gifId,
-        query = query
     )
 }
 
 fun GifEntity.toDomain(): Gif {
     return Gif(
         id = gifId,
-        url = url
+        queryId = queryId,
+        urlSmallImage = urlSmallImage,
+        urlOriginalImage = urlOriginalImage
     )
 }
 
-fun Gif.toEntity(queryId: Long): GifEntity {
+fun Gif.toEntity(): GifEntity {
     return GifEntity(
         gifId = id,
         queryId = queryId,
-        url = url
+        urlSmallImage = urlSmallImage,
+        urlOriginalImage = urlOriginalImage,
     )
 }

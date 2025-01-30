@@ -59,7 +59,7 @@ fun SearchingFieldWithButtonsSection(
             title = stringResource(R.string.input_a_searching_query),
             hint = stringResource(R.string.your_query),
             error = state.errorMessage?.asString(),
-            onTextChange = { input -> onAction(GifsAction.QueryEntered(input)) },
+            onTextChange = { input -> onAction(GifsAction.ValidateQuery(input)) },
             onClearClick = { onAction(GifsAction.ClearQuery) },
             onDoneClick = {
                 scope.launch { gridState.animateScrollToItem(1) }

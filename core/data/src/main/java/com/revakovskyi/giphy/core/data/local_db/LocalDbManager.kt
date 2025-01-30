@@ -4,12 +4,11 @@ import android.database.sqlite.SQLiteFullException
 import android.util.Log
 import com.revakovskyi.giphy.core.data.mapper.toDomain
 import com.revakovskyi.giphy.core.data.mapper.toEntity
-import com.revakovskyi.giphy.core.database.dao.DeletedGifsDao
+import com.revakovskyi.giphy.core.data.utils.safeDbCall
 import com.revakovskyi.giphy.core.database.dao.GifsDao
 import com.revakovskyi.giphy.core.database.dao.SearchQueryDao
-import com.revakovskyi.giphy.core.domain.gifs.models.DeletedGif
-import com.revakovskyi.giphy.core.domain.gifs.models.Gif
-import com.revakovskyi.giphy.core.domain.gifs.models.SearchQuery
+import com.revakovskyi.giphy.core.domain.gifs.Gif
+import com.revakovskyi.giphy.core.domain.gifs.SearchQuery
 import com.revakovskyi.giphy.core.domain.util.DataError
 import com.revakovskyi.giphy.core.domain.util.EmptyDataResult
 import com.revakovskyi.giphy.core.domain.util.Result
@@ -21,114 +20,117 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 internal class LocalDbManager(
     private val gifsDao: GifsDao,
     private val searchQueryDao: SearchQueryDao,
-    private val deletedGifsDao: DeletedGifsDao,
 ) : DbManager {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val _lastQuery = MutableStateFlow<SearchQuery?>(null)
-    override val lastQuery: StateFlow<SearchQuery?> = _lastQuery.asStateFlow()
+    private val defaultQuery = SearchQuery(query = "", currentPage = 1)
 
-    private val _deletedGifIds = MutableStateFlow<List<String>>(emptyList())
-    override val deletedGifIds: StateFlow<List<String>> = _deletedGifIds.asStateFlow()
+    private val _lastQuery = MutableStateFlow(defaultQuery)
+    override val lastQuery: StateFlow<SearchQuery> = _lastQuery.asStateFlow()
 
 
     init {
-        observeForLastQuery()
-        observeForDeletedGifs()
+        scope.launch {
+            ensureDefaultQueryExists()
+            observeForLastQuery()
+        }
     }
 
 
     override fun isDbEmpty(): Flow<Boolean> {
         return gifsDao.isDbEmpty()
-            .catch { _ -> emit(true) }
-    }
-
-    override suspend fun updateCurrentPage(page: Int) {
-        searchQueryDao.updateCurrentPage(page)
-    }
-
-    override suspend fun saveNewQuery(entity: SearchQuery) {
-        searchQueryDao.saveQuery(entity.toEntity())
-    }
-
-    override fun insertDeletedGif(deletedGif: DeletedGif): Flow<EmptyDataResult<DataError.Local>> {
-        return flow {
-            try {
-                deletedGifsDao.insertDeletedGif(deletedGif.toEntity())
-                emit(Result.Success(Unit))
-            } catch (e: SQLiteFullException) {
-
-                Log.d(
-                    "TAG_Max",
-                    "LocalDbManager.kt: SQLiteFullException 1 - ${e.printStackTrace()}"
-                )
-                Log.d("TAG_Max", "")
-
+            .catch { e ->
                 e.printStackTrace()
-                emit(Result.Error(DataError.Local.DISK_FULL))
-            } catch (e: Exception) {
-
-                Log.d("TAG_Max", "LocalDbManager.kt: Exception 1 - ${e.printStackTrace()}")
-                Log.d("TAG_Max", "")
-
-                e.printStackTrace()
-                emit(Result.Error(DataError.Local.UNKNOWN))
+                emit(false)
             }
+    }
+
+    override suspend fun saveCurrentPage(
+        queryId: Long,
+        currentPage: Int,
+    ): EmptyDataResult<DataError.Local> {
+        return safeDbCall {
+            searchQueryDao.saveCurrentPage(queryId, currentPage)
         }
     }
 
-    override suspend fun saveQueryAndGifs(
-        query: SearchQuery,
-        gifs: List<Gif>,
-        clearPrevious: Boolean,
-    ): Result<List<Gif>, DataError> {
+    override suspend fun saveNewQuery(entity: SearchQuery): EmptyDataResult<DataError.Local> {
+        return safeDbCall {
+            searchQueryDao.saveQuery(entity.toEntity())
+            searchQueryDao.deleteOldQueries()
+        }
+    }
 
-        Log.d("TAG_Max", "LocalDbManager.kt: saveQueryAndGifs")
-        Log.d("TAG_Max", "")
+    override suspend fun saveGifs(gifs: List<Gif>): EmptyDataResult<DataError.Local> {
+        return safeDbCall {
+            val queryId = _lastQuery.value.id
 
-        return try {
-            if (clearPrevious) gifsDao.clearGifs()
-            searchQueryDao.saveQuery(query.toEntity())
-            gifsDao.saveGifs(gifs.map { it.toEntity(query.id) })
-
-            Log.d("TAG_Max", "LocalDbManager.kt: updateGifsInLocalDb - result success")
+            Log.d("TAG_Max", "LocalDbManager.kt: saveGifsIntoDb")
+            Log.d("TAG_Max", "LocalDbManager.kt: lastQuery = $queryId")
             Log.d("TAG_Max", "")
 
-            Result.Success(loadGifsByQuery(queryId = query.id))
-        } catch (e: SQLiteFullException) {
-            e.printStackTrace()
-            Result.Error(DataError.Local.DISK_FULL)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.Error(DataError.Local.UNKNOWN)
+            gifsDao.saveGifs(gifs.map { it.toEntity() })
         }
     }
 
-    override suspend fun loadGifsByQuery(queryId: Long): List<Gif> = withContext(Dispatchers.IO) {
-        gifsDao.getGifsByQuery(queryId).map { it.toDomain() }
+    override suspend fun observeGifsFromDbByQuery(
+        queryId: Long,
+        gifsAmount: Int,
+        pageOffset: Int,
+    ): Result<List<Gif>, DataError.Local> = runCatching {
+        gifsDao.getGifsByQuery(queryId, gifsAmount, pageOffset).map { it.toDomain() }
+    }.fold(
+        onSuccess = { gifs ->
+
+            Log.d("TAG_Max", "LocalDbManager.kt: observeGifsFromDbByQuery")
+            Log.d("TAG_Max", "LocalDbManager.kt: gifs = $gifs")
+            Log.d("TAG_Max", "")
+
+            Result.Success(gifs)
+        },
+        onFailure = { e ->
+            e.printStackTrace()
+            if (e is CancellationException) throw e
+            when (e) {
+                is SQLiteFullException -> Result.Error(DataError.Local.DISK_FULL)
+                else -> Result.Error(DataError.Local.UNKNOWN)
+            }
+        }
+    )
+
+    override suspend fun getQueryByText(queryText: String): SearchQuery? {
+        return searchQueryDao.getQueryByText(queryText)?.toDomain()
+    }
+
+    private suspend fun ensureDefaultQueryExists() {
+        searchQueryDao.getLastQuery()
+            .firstOrNull()
+            ?: saveNewQuery(defaultQuery)
     }
 
     private fun observeForLastQuery() {
         searchQueryDao.getLastQuery()
+            .map { it?.toDomain() ?: defaultQuery }
             .onEach { query ->
-                _lastQuery.value = query?.toDomain()
-            }.launchIn(scope)
-    }
 
-    private fun observeForDeletedGifs() {
-        deletedGifsDao.getDeletedGifIdsByQuery(lastQuery.value?.query ?: "")
-            .onEach { deletedGifs ->
-                _deletedGifIds.value = deletedGifs
-            }.launchIn(scope)
+                Log.d("TAG_Max", "LocalDbManager.kt: updatedQuery = $query")
+                Log.d("TAG_Max", "")
+
+                _lastQuery.value = query
+            }
+            .catch { e -> e.printStackTrace() }
+            .launchIn(scope)
     }
 
 }
