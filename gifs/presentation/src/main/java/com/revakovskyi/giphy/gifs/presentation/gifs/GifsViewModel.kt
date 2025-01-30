@@ -57,7 +57,7 @@ class GifsViewModel(
             GifsAction.ClearQuery -> clearSearchingQuery()
             is GifsAction.ValidateQuery -> validateAndSetQuery(action.query)
             is GifsAction.ChangePage -> changePage(action.pageDirection)
-            is GifsAction.OpenOriginalGif -> openOriginalGif(action.gifId)
+            is GifsAction.OpenOriginalGif -> openOriginalGif(action.gif)
             is GifsAction.DeleteGif -> deleteGif(action.gifId)
         }
     }
@@ -168,8 +168,8 @@ class GifsViewModel(
         }
     }
 
-    private fun openOriginalGif(gifId: String) {
-        _event.trySend(GifsEvent.OpenOriginalGif(gifId))
+    private fun openOriginalGif(gif: Gif) {
+        _event.trySend(GifsEvent.OpenOriginalGif(gif))
     }
 
     private fun deleteGif(gifId: String) {

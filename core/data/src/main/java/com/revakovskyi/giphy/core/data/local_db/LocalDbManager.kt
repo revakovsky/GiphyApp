@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -88,29 +89,56 @@ internal class LocalDbManager(
         queryId: Long,
         gifsAmount: Int,
         pageOffset: Int,
-    ): Result<List<Gif>, DataError.Local> = runCatching {
-        gifsDao.getGifsByQuery(queryId, gifsAmount, pageOffset).map { it.toDomain() }
-    }.fold(
-        onSuccess = { gifs ->
+    ): Result<List<Gif>, DataError.Local> {
+        return try {
+            val gifs = gifsDao.getGifsByQuery(queryId, gifsAmount, pageOffset).map { it.toDomain() }
 
             Log.d("TAG_Max", "LocalDbManager.kt: observeGifsFromDbByQuery")
             Log.d("TAG_Max", "LocalDbManager.kt: gifs = $gifs")
             Log.d("TAG_Max", "")
 
             Result.Success(gifs)
-        },
-        onFailure = { e ->
+        } catch (e: Exception) {
+            Log.d("TAG_Max", "LocalDbManager.kt: observeGifsFromDbByQuery ERROR")
+            Log.d("TAG_Max", "LocalDbManager.kt: error = ${e.localizedMessage}")
+            Log.d("TAG_Max", "")
+
             e.printStackTrace()
+
             if (e is CancellationException) throw e
-            when (e) {
-                is SQLiteFullException -> Result.Error(DataError.Local.DISK_FULL)
-                else -> Result.Error(DataError.Local.UNKNOWN)
-            }
+            Result.Error(
+                if (e is SQLiteFullException) DataError.Local.DISK_FULL
+                else DataError.Local.UNKNOWN
+            )
         }
-    )
+    }
 
     override suspend fun getQueryByText(queryText: String): SearchQuery? {
         return searchQueryDao.getQueryByText(queryText)?.toDomain()
+    }
+
+    override fun getGifsByQueryId(queryId: Long): Flow<Result<List<Gif>, DataError.Local>> {
+        return flow {
+            try {
+                gifsDao.getGifsByQueryId(queryId)
+                    .collect { entities ->
+                        val gifs = entities.map { it.toDomain() }
+
+                        Log.d("TAG_Max", "LocalDbManager.kt: getGifsByQueryId")
+                        Log.d("TAG_Max", "LocalDbManager.kt: gifs = $gifs")
+                        Log.d("TAG_Max", "")
+
+                        emit(Result.Success(gifs))
+                    }
+            } catch (e: SQLiteFullException) {
+                e.printStackTrace()
+                emit(Result.Error(DataError.Local.DISK_FULL))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                if (e is CancellationException) throw e
+                emit(Result.Error(DataError.Local.UNKNOWN))
+            }
+        }
     }
 
     private suspend fun ensureDefaultQueryExists() {

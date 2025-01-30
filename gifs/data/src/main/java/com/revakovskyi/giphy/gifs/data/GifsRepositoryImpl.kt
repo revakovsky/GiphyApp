@@ -65,6 +65,10 @@ class GifsRepositoryImpl(
         }
     }
 
+    override fun getGifsByQueryId(queryId: Long): Flow<Result<List<Gif>, DataError.Local>> {
+        return dbManager.getGifsByQueryId(queryId)
+    }
+
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleSameQueryUpperPage(page: Int) {
         logDebug(
             "Handling same query upper page",

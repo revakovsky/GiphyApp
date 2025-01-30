@@ -9,6 +9,7 @@ import coil.request.CachePolicy
 import com.revakovskyi.giphy.core.presentation.ui.uitls.QueryValidator
 import com.revakovskyi.giphy.core.presentation.ui.uitls.QueryValidatorImpl
 import com.revakovskyi.giphy.gifs.presentation.gifs.GifsViewModel
+import com.revakovskyi.giphy.gifs.presentation.original_gif.OriginalGifViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.core.module.dsl.singleOf
@@ -37,5 +38,6 @@ val gifsPresentationModule = module {
     }
 
     viewModelOf(::GifsViewModel)
+    viewModelOf(::OriginalGifViewModel)
 
 }

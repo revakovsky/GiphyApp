@@ -18,4 +18,7 @@ interface GifsDao {
     @Query("SELECT * FROM gifs WHERE query_id = :queryId LIMIT :limit OFFSET :offset")
     suspend fun getGifsByQuery(queryId: Long, limit: Int, offset: Int): List<GifEntity>
 
+    @Query("SELECT * FROM gifs WHERE query_id = :queryId")
+    fun getGifsByQueryId(queryId: Long): Flow<List<GifEntity>>
+
 }

@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.revakovskyi.giphy.core.domain.gifs.Gif
 import com.revakovskyi.giphy.core.presentation.components.GradientBackground
 import com.revakovskyi.giphy.core.presentation.components.LoadingDialog
 import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
@@ -35,7 +36,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun GifsScreenRoot(
     viewModel: GifsViewModel = koinViewModel(),
-    openOriginalGif: (gifId: String) -> Unit,
+    openOriginalGif: (gif: Gif) -> Unit,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
 
@@ -44,7 +45,7 @@ fun GifsScreenRoot(
 
     SingleEvent(flow = viewModel.event) { event ->
         when (event) {
-            is GifsEvent.OpenOriginalGif -> openOriginalGif(event.gifId)
+            is GifsEvent.OpenOriginalGif -> openOriginalGif(event.gif)
             is GifsEvent.ShowNotification -> {
                 scope.launch {
                     SnackBarController.sendEvent(

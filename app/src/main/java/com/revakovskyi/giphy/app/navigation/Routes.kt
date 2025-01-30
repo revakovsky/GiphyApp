@@ -1,5 +1,6 @@
 package com.revakovskyi.giphy.app.navigation
 
+import com.revakovskyi.giphy.core.domain.gifs.Gif
 import kotlinx.serialization.Serializable
 
 sealed interface Routes {
@@ -8,6 +9,6 @@ sealed interface Routes {
     data object Gifs : Routes
 
     @Serializable
-    data class Original(val gifId: String) : Routes
+    data class Original(val gif: Gif) : Routes
 
 }

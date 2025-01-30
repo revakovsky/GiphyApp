@@ -7,7 +7,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.revakovskyi.giphy.core.domain.gifs.Gif
 import com.revakovskyi.giphy.gifs.presentation.gifs.GifsScreenRoot
+import com.revakovskyi.giphy.gifs.presentation.original_gif.OriginalGifScreenRoot
+import kotlin.reflect.typeOf
 
 private const val TRANSITION_DURATION = 300
 
@@ -47,16 +50,16 @@ fun AppNavigation() {
 
         composable<Routes.Gifs> {
             GifsScreenRoot(
-                openOriginalGif = { gifId ->
-                    navController.navigate(Routes.Original(gifId))
+                openOriginalGif = { gif ->
+                    navController.navigate(Routes.Original(gif))
                 }
             )
         }
 
-        composable<Routes.Original> {
-            val gifId = it.toRoute<Routes.Original>().gifId
-
-            // TODO: implement next screen
+        composable<Routes.Original>(
+            typeMap = mapOf(typeOf<Gif>() to CustomNavType.PetType)
+        ) {
+            OriginalGifScreenRoot(gif = it.toRoute<Routes.Original>().gif)
         }
 
     }

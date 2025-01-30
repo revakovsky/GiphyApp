@@ -72,7 +72,7 @@ fun GifsSection(
                     CoilImage(
                         imageLoader = imageLoader,
                         url = gif.urlSmallImage,
-                        onImageClick = { onAction(GifsAction.OpenOriginalGif(gifId = gif.id)) },
+                        onImageClick = { onAction(GifsAction.OpenOriginalGif(gif)) },
                         onLongPress = { selectedGifId = gif.id }
                     )
 
