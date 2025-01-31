@@ -25,6 +25,9 @@ class GifsRepositoryImpl(
     private val lastQuery: StateFlow<SearchQuery> = dbManager.lastQuery
     private val currentQuery = MutableStateFlow(SearchQuery(query = "", currentPage = 1))
 
+    private val pendingQuery = MutableStateFlow<SearchQuery?>(null)
+    private val pendingPage = MutableStateFlow<Int?>(null)
+
     private val pageOffset = MutableStateFlow(0)
     private val amountToDownload = MutableStateFlow(AMOUNT_TO_DOWNLOAD)
 
@@ -70,18 +73,15 @@ class GifsRepositoryImpl(
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleSameQueryUpperPage(page: Int) {
+        pendingPage.update { page }
+
         logDebug(
             "Handling same query upper page",
             "previousPage = ${lastQuery.value.currentPage}",
-            "currentPage = $page"
+            "currentPage = ${pendingPage.value}"
         )
 
         preparePaginationData(page)
-
-        logDebug(
-            "lastQuery = ${lastQuery.value}",
-            "pageOffset = ${pageOffset.value}",
-        )
 
         val gifs = checkGifsInLocalDB(lastQuery.value.id)
 
@@ -95,9 +95,8 @@ class GifsRepositoryImpl(
         } else {
             logDebug("Enough gifs found, using DB results.")
             emit(Result.Success(gifs))
+            if (saveCurrentPage(page) is Result.Error) return
         }
-
-        if (saveCurrentPage(page) is Result.Error) return
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleFirstPageCase(page: Int) {
@@ -294,6 +293,15 @@ class GifsRepositoryImpl(
     ) {
         val savingResult = saveGifs(gifs)
         if (savingResult is Result.Error) return
+
+        pendingPage.value?.let {
+            if (saveCurrentPage(it) is Result.Error) return
+        }
+
+        logDebug(
+            "Successfully update page in DB",
+            "lastQuery = ${lastQuery.value}"
+        )
 
         fetchGifsFromDB(
             queryId = lastQuery.value.id,
