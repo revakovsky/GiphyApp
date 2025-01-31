@@ -1,6 +1,5 @@
 package com.revakovskyi.giphy.gifs.presentation.original_gif
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revakovskyi.giphy.core.domain.gifs.Gif
@@ -17,14 +16,13 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 class OriginalGifViewModel(
     private val gifsRepository: GifsRepository,
 ) : ViewModel() {
 
-    private val _originalGifState = MutableStateFlow(OriginalGifState())
-    val originalGifState: StateFlow<OriginalGifState> = _originalGifState.asStateFlow()
+    private val _state = MutableStateFlow(OriginalGifState())
+    val state: StateFlow<OriginalGifState> = _state.asStateFlow()
 
     private val _event = Channel<OriginalGifEvent>()
     val event: Flow<OriginalGifEvent> = _event.receiveAsFlow()
@@ -33,48 +31,36 @@ class OriginalGifViewModel(
     fun onAction(action: OriginalGifAction) {
         when (action) {
             is OriginalGifAction.InitializeGif -> fetchOriginalGifs(action.gif)
-            OriginalGifAction.NextGif -> moveToNextGif()
-            OriginalGifAction.PreviousGif -> moveToPreviousGif()
+            is OriginalGifAction.UpdateCurrentIndex -> updateCurrentIndex(action.index)
         }
     }
 
     private fun fetchOriginalGifs(gif: Gif) {
-        viewModelScope.launch {
-            gifsRepository.getGifsByQueryId(gif.queryId)
-                .onEach { result ->
-                    when (result) {
-                        is Result.Error -> processErrorResult(gif, result)
-                        is Result.Success -> processSuccessResult(gif, result)
-                    }
-                }.launchIn(viewModelScope)
-        }
+        gifsRepository.getGifsByQueryId(gif.queryId)
+            .onEach { result ->
+                when (result) {
+                    is Result.Error -> processErrorResult(result)
+                    is Result.Success -> processSuccessResult(gif, result)
+                }
+            }.launchIn(viewModelScope)
     }
 
-    private suspend fun processErrorResult(gif: Gif, result: Result.Error<DataError>) {
+    private fun updateCurrentIndex(index: Int) {
+        _state.update { it.copy(currentIndex = index) }
+    }
 
-        Log.d("TAG_Max", "OriginalGifViewModel.kt: processErrorResult - ${result.error.asUiText()}")
-        Log.d("TAG_Max", "")
-
-        _originalGifState.update {
-            it.copy(isLoading = false, currentGifId = gif.id)
-        }
-
+    private suspend fun processErrorResult(result: Result.Error<DataError>) {
+        _state.update { it.copy(isLoading = false) }
         handleErrorResult(result)
     }
 
     private fun processSuccessResult(gif: Gif, result: Result.Success<List<Gif>>) {
         val gifs = result.data
-
-        Log.d("TAG_Max", "GifsViewModel.kt: processSuccessResult gifs = $gifs")
-        Log.d("TAG_Max", "GifsViewModel.kt: size = ${gifs.size}")
-        Log.d("TAG_Max", "")
-
         val currentIndex = gifs.indexOfFirst { it.id == gif.id }
 
-        _originalGifState.update {
+        _state.update {
             it.copy(
                 gifs = gifs,
-                currentGifId = gif.id,
                 currentIndex = currentIndex,
                 isLoading = false,
             )
@@ -85,34 +71,6 @@ class OriginalGifViewModel(
         when (result.error) {
             DataError.Local.THE_SAME_DATA -> Unit
             else -> _event.send(OriginalGifEvent.ShowNotification(result.error.asUiText()))
-        }
-    }
-
-    private fun moveToNextGif() {
-        _originalGifState.value.let { state ->
-            if (state.hasNext) {
-                val newIndex = state.currentIndex + 1
-                _originalGifState.update {
-                    it.copy(
-                        currentGifId = state.gifs[newIndex].id,
-                        currentIndex = newIndex
-                    )
-                }
-            }
-        }
-    }
-
-    private fun moveToPreviousGif() {
-        _originalGifState.value.let { state ->
-            if (state.hasPrevious) {
-                val newIndex = state.currentIndex - 1
-                _originalGifState.update {
-                    it.copy(
-                        currentGifId = state.gifs[newIndex].id,
-                        currentIndex = newIndex
-                    )
-                }
-            }
         }
     }
 

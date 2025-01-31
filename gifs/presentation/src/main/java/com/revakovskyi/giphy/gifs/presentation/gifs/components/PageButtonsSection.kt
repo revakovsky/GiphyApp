@@ -45,7 +45,7 @@ fun PageButtonsSection(
         ) {
             if (state.currentPage > 1) {
                 GiphyIconButton(
-                    iconModifier = Modifier.scale(scaleX = -1f, scaleY = 1f),
+                    modifier = Modifier.scale(scaleX = -1f, scaleY = 1f),
                     contentDescription = stringResource(R.string.previous),
                     onClick = {
                         scope.launch { gridState.animateScrollToItem(1) }

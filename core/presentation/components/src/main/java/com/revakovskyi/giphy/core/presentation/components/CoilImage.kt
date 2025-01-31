@@ -24,6 +24,7 @@ import com.revakovskyi.giphy.core.presentation.ui.theme.icons
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CoilImage(
+    modifier: Modifier = Modifier,
     imageLoader: ImageLoader,
     url: String,
     clickable: Boolean = true,
@@ -33,7 +34,8 @@ fun CoilImage(
     val haptic = LocalHapticFeedback.current
 
     Box(
-        modifier = Modifier
+        contentAlignment = Alignment.Center,
+        modifier = modifier
             .aspectRatio(1.0f)
             .clip(MaterialTheme.shapes.small)
             .combinedClickable(
@@ -48,7 +50,6 @@ fun CoilImage(
     ) {
 
         SubcomposeAsyncImage(
-            modifier = Modifier.fillMaxSize(),
             model = url,
             contentDescription = null,
             imageLoader = imageLoader,
@@ -70,6 +71,7 @@ fun CoilImage(
                     )
                 }
             },
+            modifier = Modifier.fillMaxSize()
         )
 
     }

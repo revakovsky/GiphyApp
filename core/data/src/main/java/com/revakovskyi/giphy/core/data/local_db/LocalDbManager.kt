@@ -120,16 +120,10 @@ internal class LocalDbManager(
     override fun getGifsByQueryId(queryId: Long): Flow<Result<List<Gif>, DataError.Local>> {
         return flow {
             try {
-                gifsDao.getGifsByQueryId(queryId)
-                    .collect { entities ->
-                        val gifs = entities.map { it.toDomain() }
-
-                        Log.d("TAG_Max", "LocalDbManager.kt: getGifsByQueryId")
-                        Log.d("TAG_Max", "LocalDbManager.kt: gifs = $gifs")
-                        Log.d("TAG_Max", "")
-
-                        emit(Result.Success(gifs))
-                    }
+                gifsDao.getGifsByQueryId(queryId).collect { entities ->
+                    val gifs = entities.map { it.toDomain() }
+                    emit(Result.Success(gifs))
+                }
             } catch (e: SQLiteFullException) {
                 e.printStackTrace()
                 emit(Result.Error(DataError.Local.DISK_FULL))

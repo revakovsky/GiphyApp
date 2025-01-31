@@ -19,7 +19,7 @@ import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
 
 @Composable
 fun GiphyIconButton(
-    iconModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     contentDescription: String,
     icon: ImageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
     buttonsSize: Dp = 48.dp,
@@ -31,13 +31,13 @@ fun GiphyIconButton(
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = MaterialTheme.colorScheme.secondary
         ),
-        modifier = Modifier.size(buttonsSize)
+        modifier = modifier.size(buttonsSize)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = MaterialTheme.colorScheme.onPrimary,
-            modifier = iconModifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(4.dp)
         )
