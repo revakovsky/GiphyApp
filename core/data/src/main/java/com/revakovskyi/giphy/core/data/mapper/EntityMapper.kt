@@ -16,7 +16,8 @@ fun SearchQueryEntity.toDomain(): SearchQuery {
 fun SearchQuery.toEntity(): SearchQueryEntity {
     return SearchQueryEntity(
         query = query,
-        currentPage = currentPage
+        currentPage = currentPage,
+        timestamp = System.currentTimeMillis(),
     )
 }
 

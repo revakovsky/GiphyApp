@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.revakovskyi.giphy.core.database.entities.SearchQueryEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -19,11 +20,18 @@ interface SearchQueryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun saveQuery(query: SearchQueryEntity)
 
-    @Query("SELECT * FROM search_queries ORDER BY id DESC LIMIT 1")
+    @Update
+    suspend fun updateQuery(query: SearchQueryEntity)
+
+    @Query("SELECT * FROM search_queries ORDER BY timestamp DESC LIMIT 1")
     fun getLastQuery(): Flow<SearchQueryEntity?>
 
-    @Query("UPDATE search_queries SET current_page = :currentPage WHERE id = :id")
-    suspend fun saveCurrentPage(id: Long, currentPage: Int)
+    @Query("UPDATE search_queries SET current_page = :currentPage, timestamp = :timestamp WHERE id = :id")
+    suspend fun saveCurrentPage(
+        id: Long,
+        currentPage: Int,
+        timestamp: Long = System.currentTimeMillis(),
+    )
 
     @Query("SELECT * FROM search_queries WHERE `query` = :queryText LIMIT 1")
     suspend fun getQueryByText(queryText: String): SearchQueryEntity?

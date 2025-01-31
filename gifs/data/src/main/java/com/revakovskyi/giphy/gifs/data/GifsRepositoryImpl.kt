@@ -42,7 +42,7 @@ class GifsRepositoryImpl(
     override fun isDbEmpty(): Flow<Boolean> = dbManager.isDbEmpty()
     override fun observeLastQuery(): Flow<SearchQuery> = lastQuery
 
-    override fun fetchGifsByRequest(
+    override fun fetchGifsByQuery(
         query: String,
         page: Int,
     ): Flow<Result<List<Gif>, DataError>> {
@@ -104,9 +104,12 @@ class GifsRepositoryImpl(
         logDebug("Opening first page for last query")
 
         if (saveCurrentPage(page) is Result.Error) return
-
         pageOffset.update { 0 }
-        logDebug("Updated lastQuery", "currentPage = $page", "lastQuery = ${lastQuery.value}")
+
+        logDebug("Updated lastQuery",
+            "currentPage = $page",
+            "lastQuery = ${lastQuery.value}"
+        )
 
         fetchGifsFromDB(
             queryId = lastQuery.value.id,
@@ -143,7 +146,11 @@ class GifsRepositoryImpl(
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleNewQuery(query: String) {
-        logDebug("Handling new query", "searchingQuery = $query")
+
+        logDebug(
+            "Handling new query",
+            "searchingQuery = $query"
+        )
 
         initializeNewQuery(query)
         val existingQuery = dbManager.getQueryByText(query)
@@ -270,15 +277,23 @@ class GifsRepositoryImpl(
         existingQuery: SearchQuery,
     ) {
         logDebug("query exists in DB, reusing it")
+
         searchQuery.update { it.copy(id = existingQuery.id) }
 
         val gifs = checkGifsInLocalDB(existingQuery.id)
 
         if (gifs.size < DEFAULT_AMOUNT_ON_PAGE) loadMoreGifsFromRemote(gifs)
         else {
-            logDebug("Enough saved gifs in DB, using them")
+            logDebug(
+                "Enough saved gifs in DB, using them",
+                "pendingQuery = ${pendingQuery.value}",
+                "pendingPage = ${pendingPage.value}",
+                "lastQuery = ${lastQuery.value}",
+                "searchQuery = ${searchQuery.value}",
+            )
+
+            dbManager.saveOrUpdateQuery(searchQuery.value)
             emit(Result.Success(gifs))
-            pendingPage.value?.let { saveCurrentPage(it) }
         }
     }
 
@@ -288,7 +303,7 @@ class GifsRepositoryImpl(
         logDebug("update pendingQuery - ${pendingQuery.value}")
 
         // TODO: 1 - save new query to get a new id for query
-        val savingResult = dbManager.saveNewQuery(searchQuery.value)
+        val savingResult = dbManager.saveOrUpdateQuery(searchQuery.value)
 
         if (savingResult is Result.Error) {
             logDebug("Error saving new query", "error = ${savingResult.error.name}")
@@ -341,7 +356,7 @@ class GifsRepositoryImpl(
     }
 
     private suspend fun restoreLastSuccessfulQuery() {
-        pendingQuery.value?.let { dbManager.saveNewQuery(it) }
+        pendingQuery.value?.let { dbManager.saveOrUpdateQuery(it) }
         dbManager.clearUnsuccessfulSearchQueries()
     }
 

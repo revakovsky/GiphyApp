@@ -16,7 +16,7 @@ interface DbManager {
     suspend fun markQueryAsSuccessful(queryId: Long)
     fun isDbEmpty(): Flow<Boolean>
     suspend fun saveCurrentPage(queryId: Long, currentPage: Int): EmptyDataResult<DataError.Local>
-    suspend fun saveNewQuery(entity: SearchQuery): EmptyDataResult<DataError.Local>
+    suspend fun saveOrUpdateQuery(searchQuery: SearchQuery): EmptyDataResult<DataError.Local>
     suspend fun saveGifs(gifs: List<Gif>): EmptyDataResult<DataError.Local>
     suspend fun observeGifsFromDbByQuery(
         queryId: Long,

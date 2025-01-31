@@ -44,9 +44,9 @@ internal class LocalDbManager(
 
     init {
         scope.launch {
+            clearUnsuccessfulSearchQueries()
             ensureDefaultQueryExists()
             observeForLastQuery()
-            clearUnsuccessfulSearchQueries()
         }
     }
 
@@ -68,9 +68,33 @@ internal class LocalDbManager(
         }
     }
 
-    override suspend fun saveNewQuery(entity: SearchQuery): EmptyDataResult<DataError.Local> {
+    override suspend fun saveOrUpdateQuery(searchQuery: SearchQuery): EmptyDataResult<DataError.Local> {
         return safeDbCall {
-            searchQueryDao.saveQuery(entity.toEntity())
+            val existingQuery = searchQueryDao.getQueryByText(searchQuery.query)
+
+            Log.d("TAG_Max", "LocalDbManager.kt: searchQueryToSave = $searchQuery")
+            Log.d("TAG_Max", "LocalDbManager.kt: suchQueryExist = ${existingQuery != null}")
+            Log.d("TAG_Max", "LocalDbManager.kt: existingQuery = $existingQuery")
+
+            if (existingQuery == null) {
+
+                Log.d("TAG_Max", "LocalDbManager.kt: saveQuery")
+
+                searchQueryDao.saveQuery(searchQuery.toEntity())
+            } else {
+
+                Log.d("TAG_Max", "LocalDbManager.kt: updateQuery")
+
+                val copy = searchQuery.toEntity().copy(
+                    id = existingQuery.id,
+                    wasSuccessful = existingQuery.wasSuccessful,
+                    timestamp = System.currentTimeMillis()
+                )
+                searchQueryDao.updateQuery(copy)
+            }
+
+            Log.d("TAG_Max", "")
+
             searchQueryDao.deleteOldQueries()
         }
     }
@@ -137,10 +161,18 @@ internal class LocalDbManager(
         }
     }
 
+    override suspend fun clearUnsuccessfulSearchQueries() {
+        searchQueryDao.clearUnsuccessfulSearchQueries()
+    }
+
+    override suspend fun markQueryAsSuccessful(queryId: Long) {
+        searchQueryDao.markQueryAsSuccessful(queryId)
+    }
+
     private suspend fun ensureDefaultQueryExists() {
         searchQueryDao.getLastQuery()
             .firstOrNull()
-            ?: saveNewQuery(defaultQuery)
+            ?: saveOrUpdateQuery(defaultQuery)
     }
 
     private fun observeForLastQuery() {
@@ -155,14 +187,6 @@ internal class LocalDbManager(
             }
             .catch { e -> e.printStackTrace() }
             .launchIn(scope)
-    }
-
-    override suspend fun clearUnsuccessfulSearchQueries() {
-        searchQueryDao.clearUnsuccessfulSearchQueries()
-    }
-
-    override suspend fun markQueryAsSuccessful(queryId: Long) {
-        searchQueryDao.markQueryAsSuccessful(queryId)
     }
 
 }

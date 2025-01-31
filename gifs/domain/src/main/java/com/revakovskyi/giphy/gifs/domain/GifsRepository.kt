@@ -10,7 +10,7 @@ interface GifsRepository {
 
     fun isDbEmpty(): Flow<Boolean>
     fun observeLastQuery(): Flow<SearchQuery>
-    fun fetchGifsByRequest(query: String, page: Int): Flow<Result<List<Gif>, DataError>>
+    fun fetchGifsByQuery(query: String, page: Int): Flow<Result<List<Gif>, DataError>>
     fun getGifsByQueryId(queryId: Long): Flow<Result<List<Gif>, DataError.Local>>
 
 }

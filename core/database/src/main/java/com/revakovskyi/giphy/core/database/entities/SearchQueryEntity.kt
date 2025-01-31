@@ -14,4 +14,5 @@ data class SearchQueryEntity(
     @ColumnInfo(name = "query") val query: String,
     @ColumnInfo(name = "current_page") val currentPage: Int,
     @ColumnInfo(name = "successful") val wasSuccessful: Boolean = false,
+    @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis(),
 )
