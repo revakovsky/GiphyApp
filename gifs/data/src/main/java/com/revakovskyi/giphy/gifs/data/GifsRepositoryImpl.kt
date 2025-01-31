@@ -91,6 +91,7 @@ class GifsRepositoryImpl(
         )
 
         if (gifs.size < DEFAULT_AMOUNT_ON_PAGE) {
+            searchQuery.update { lastQuery.value }
             loadMoreGifsFromRemote(gifs)
         } else {
             logDebug("Enough gifs found, using DB results.")
@@ -115,15 +116,15 @@ class GifsRepositoryImpl(
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleSameQueryLowerPage(page: Int) {
+        pendingPage.update { page }
+
         logDebug(
             "Handling same query lower page",
             "previousPage = ${lastQuery.value.currentPage}",
-            "currentPage = $page"
+            "currentPage = ${pendingPage.value}"
         )
 
-        if (saveCurrentPage(page) is Result.Error) return
-
-        preparePaginationData(page)
+        preparePaginationData(pendingPage.value!!)
 
         val gifs = checkGifsInLocalDB(lastQuery.value.id)
 
@@ -136,6 +137,8 @@ class GifsRepositoryImpl(
         else {
             logDebug("Enough gifs found, using DB results.")
             emit(Result.Success(gifs))
+            pendingPage.value?.let { saveCurrentPage(it) }
+            resetPendingEntities()
         }
     }
 

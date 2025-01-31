@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "0c1ad49654fd837ad130ed8e4cf81b7d",
+    "identityHash": "43805f89426350ef646f374625992139",
     "entities": [
       {
         "tableName": "gifs",
@@ -66,7 +66,7 @@
       },
       {
         "tableName": "search_queries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `query` TEXT NOT NULL, `current_page` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `query` TEXT NOT NULL, `current_page` INTEGER NOT NULL, `successful` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -83,6 +83,12 @@
           {
             "fieldPath": "currentPage",
             "columnName": "current_page",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wasSuccessful",
+            "columnName": "successful",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -110,7 +116,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0c1ad49654fd837ad130ed8e4cf81b7d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '43805f89426350ef646f374625992139')"
     ]
   }
 }
