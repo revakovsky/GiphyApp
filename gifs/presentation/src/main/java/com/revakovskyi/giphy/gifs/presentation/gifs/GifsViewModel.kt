@@ -103,10 +103,11 @@ class GifsViewModel(
     private suspend fun handleRequestResult(result: Result<List<Gif>, DataError>) {
         when (result) {
             is Result.Error -> {
-                _state.update {
-                    it.copy(isLoading = false, searchingQuery = "", errorMessage = null)
-                }
-                _currentInputQuery.update { state.value.searchingQuery }
+
+                Log.d("TAG_Max", "GifsViewModel.kt: Result.Error = ${result.error.asUiText()}")
+                Log.d("TAG_Max", "")
+
+                _state.update { it.copy(isLoading = false, currentPage = 1) }
                 handleErrorResult(result)
             }
 
@@ -116,7 +117,10 @@ class GifsViewModel(
                 Log.d("TAG_Max", "")
 
                 _state.update {
-                    it.copy(isLoading = false, gifs = result.data)
+                    it.copy(
+                        isLoading = false,
+                        gifs = result.data,
+                    )
                 }
             }
         }

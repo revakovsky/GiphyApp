@@ -57,6 +57,7 @@ class GifsRepositoryImpl(
                         page < lastQuery.value.currentPage -> handleSameQueryLowerPage(page)
                         else -> {
                             logDebug("GifsRepositoryImpl.kt: the same query same page")
+                            searchQuery.update { lastQuery.value }
                             handleNewQuery(lastQuery.value.query)
                         }
                     }
