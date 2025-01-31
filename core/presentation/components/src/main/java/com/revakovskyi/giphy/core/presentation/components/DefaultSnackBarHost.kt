@@ -41,7 +41,7 @@ fun DefaultSnackBarHost(
             snackBarHostState.showSnackbar(
                 message = event.message,
                 actionLabel = event.action?.name,
-                duration = SnackbarDuration.Long
+                duration = SnackbarDuration.Short
             )
         }
     }

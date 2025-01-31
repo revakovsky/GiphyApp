@@ -5,6 +5,7 @@ import com.revakovskyi.giphy.core.presentation.ui.uitls.UiText
 
 data class GifsState(
     val isLoading: Boolean = true,
+    val hasError: Boolean = false,
     val gifs: List<Gif> = emptyList(),
     val currentPage: Int = 1,
     val searchingQuery: String = "",

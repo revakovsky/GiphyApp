@@ -57,8 +57,9 @@ class GifsRepositoryImpl(
                         page < lastQuery.value.currentPage -> handleSameQueryLowerPage(page)
                         else -> {
                             logDebug("GifsRepositoryImpl.kt: the same query same page")
-                            searchQuery.update { lastQuery.value }
-                            handleNewQuery(lastQuery.value.query)
+
+                            if (page == 1) handleNewQuery(lastQuery.value.query)
+                            else emit(Result.Error(DataError.Local.THE_SAME_DATA))
                         }
                     }
                 } else handleNewQuery(query)
@@ -107,7 +108,8 @@ class GifsRepositoryImpl(
         if (saveCurrentPage(page) is Result.Error) return
         pageOffset.update { 0 }
 
-        logDebug("Updated lastQuery",
+        logDebug(
+            "Updated lastQuery",
             "currentPage = $page",
             "lastQuery = ${lastQuery.value}"
         )

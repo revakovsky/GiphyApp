@@ -44,6 +44,8 @@ class GifsViewModel(
     private val _event = Channel<GifsEvent>()
     val event: Flow<GifsEvent> = _event.receiveAsFlow()
 
+    private val _lastSuccessfulState = MutableStateFlow<GifsState?>(null)
+
 
     init {
         viewModelScope.launch { handleLastQuery() }
@@ -94,7 +96,9 @@ class GifsViewModel(
         }.flatMapLatest { (query, page) ->
             if (query.isNotEmpty()) {
                 gifsRepository.fetchGifsByQuery(query = query, page = page)
-            } else emptyFlow()
+            } else {
+                emptyFlow()
+            }
         }.onEach { result ->
             handleRequestResult(result)
         }.launchIn(viewModelScope)
@@ -105,9 +109,31 @@ class GifsViewModel(
             is Result.Error -> {
 
                 Log.d("TAG_Max", "GifsViewModel.kt: Result.Error = ${result.error.asUiText()}")
+                Log.d(
+                    "TAG_Max",
+                    "GifsViewModel.kt: _lastSuccessfulState currentPage = ${_lastSuccessfulState.value?.currentPage}"
+                )
+                Log.d("TAG_Max", "GifsViewModel.kt: state currentPage = ${state.value.currentPage}")
+                Log.d("TAG_Max", "")
+                Log.d(
+                    "TAG_Max",
+                    "GifsViewModel.kt: _lastSuccessfulState query = ${_lastSuccessfulState.value?.searchingQuery}"
+                )
+                Log.d("TAG_Max", "GifsViewModel.kt: state query = ${state.value.searchingQuery}")
                 Log.d("TAG_Max", "")
 
-                _state.update { it.copy(isLoading = false, currentPage = 1) }
+                val lastState = _lastSuccessfulState.value ?: GifsState()
+
+                _state.update {
+                    it.copy(
+                        searchingQuery = lastState.searchingQuery,
+                        currentPage = lastState.currentPage,
+                        isLoading = false,
+                        hasError = true
+                    )
+                }
+                _currentInputQuery.update { lastState.searchingQuery }
+
                 handleErrorResult(result)
             }
 
@@ -120,8 +146,10 @@ class GifsViewModel(
                     it.copy(
                         isLoading = false,
                         gifs = result.data,
+                        hasError = false,
                     )
                 }
+                _lastSuccessfulState.update { state.value }
             }
         }
     }
@@ -160,6 +188,10 @@ class GifsViewModel(
     }
 
     private fun changePage(pageDirection: PageDirection) {
+        if (!state.value.hasError) {
+            _lastSuccessfulState.update { state.value }
+        }
+
         _state.update {
             it.copy(
                 isLoading = true,

@@ -104,11 +104,7 @@ private fun MainContent(
 
 
     Scaffold(
-        snackbarHost = {
-            DefaultSnackBarHost(
-                snackBarHostState
-            )
-        },
+        snackbarHost = { DefaultSnackBarHost(snackBarHostState) },
         modifier = Modifier.fillMaxSize()
     ) { _ ->
 
