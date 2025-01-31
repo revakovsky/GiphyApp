@@ -23,7 +23,7 @@ class GifsRepositoryImpl(
 ) : GifsRepository {
 
     private val lastQuery: StateFlow<SearchQuery> = dbManager.lastQuery
-    private val currentQuery = MutableStateFlow(SearchQuery(query = "", currentPage = 1))
+    private val searchQuery = MutableStateFlow(SearchQuery(query = "", currentPage = 1))
 
     private val pendingQuery = MutableStateFlow<SearchQuery?>(null)
     private val pendingPage = MutableStateFlow<Int?>(null)
@@ -43,14 +43,14 @@ class GifsRepositoryImpl(
     override fun observeLastQuery(): Flow<SearchQuery> = lastQuery
 
     override fun fetchGifsByRequest(
-        searchingQuery: String,
+        query: String,
         page: Int,
     ): Flow<Result<List<Gif>, DataError>> {
         return flow {
-            logDebug("Start fetching GIFs", "searchingQuery = $searchingQuery", "page = $page")
+            logDebug("Start fetching GIFs", "query = $query", "page = $page")
 
             try {
-                if (searchingQuery == lastQuery.value.query) {
+                if (query == lastQuery.value.query) {
                     when {
                         page > lastQuery.value.currentPage -> handleSameQueryUpperPage(page)
                         page == 1 && page < lastQuery.value.currentPage -> handleFirstPageCase(page)
@@ -60,7 +60,7 @@ class GifsRepositoryImpl(
                             handleNewQuery(lastQuery.value.query)
                         }
                     }
-                } else handleNewQuery(searchingQuery)
+                } else handleNewQuery(query)
             } catch (e: Exception) {
                 logDebug("Unexpected error", "Message = ${e.localizedMessage}")
                 emit(Result.Error(DataError.Network.UNKNOWN))
@@ -104,7 +104,7 @@ class GifsRepositoryImpl(
 
         if (saveCurrentPage(page) is Result.Error) return
 
-        pageOffset.value = 0
+        pageOffset.update { 0 }
         logDebug("Updated lastQuery", "currentPage = $page", "lastQuery = ${lastQuery.value}")
 
         fetchGifsFromDB(
@@ -139,13 +139,11 @@ class GifsRepositoryImpl(
         }
     }
 
-    private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleNewQuery(
-        searchingQuery: String,
-    ) {
-        logDebug("Handling new query", "searchingQuery = $searchingQuery")
+    private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleNewQuery(query: String) {
+        logDebug("Handling new query", "searchingQuery = $query")
 
-        initializeNewQuery(searchingQuery)
-        val existingQuery = dbManager.getQueryByText(searchingQuery)
+        initializeNewQuery(query)
+        val existingQuery = dbManager.getQueryByText(query)
 
         logDebug("existingQuery = $existingQuery")
 
@@ -154,7 +152,7 @@ class GifsRepositoryImpl(
     }
 
     private fun preparePaginationData(page: Int) {
-        pageOffset.value = (page - 1) * DEFAULT_AMOUNT_ON_PAGE
+        pageOffset.update { (page - 1) * DEFAULT_AMOUNT_ON_PAGE }
         logDebug(
             "lastQuery = ${lastQuery.value}",
             "pageOffset = ${pageOffset.value}",
@@ -181,17 +179,17 @@ class GifsRepositoryImpl(
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.loadMoreGifsFromRemote(gifs: List<Gif>) {
-        amountToDownload.value = DEFAULT_AMOUNT_ON_PAGE - gifs.lastIndex
+        amountToDownload.update { DEFAULT_AMOUNT_ON_PAGE - gifs.lastIndex }
 
         logDebug(
             "Not enough gifs, loading more from network...",
-            "lastQuery = ${lastQuery.value}",
+            "searchQuery = ${searchQuery.value}",
             "pageOffset = ${pageOffset.value}",
             "amountToDownload = ${amountToDownload.value}"
         )
 
         val result = networkManager.loadGifsFromRemote(
-            query = lastQuery.value,
+            query = searchQuery.value,
             offset = pageOffset.value,
             amountToDownload = amountToDownload.value,
         )
@@ -227,7 +225,12 @@ class GifsRepositoryImpl(
             }
 
             is Result.Error -> {
-                logDebug("Network error result!")
+                logDebug(
+                    "Network error result!",
+                    "Delete pending query from db (it was absolutely new search query)"
+                )
+                restoreLastSuccessfulQuery()
+                resetPendingEntities()
                 emit(result)
             }
         }
@@ -252,18 +255,19 @@ class GifsRepositoryImpl(
         emit(observingResult)
     }
 
-    private fun initializeNewQuery(searchingQuery: String) {
-        pageOffset.value = 0
-        amountToDownload.value = AMOUNT_TO_DOWNLOAD
-        currentQuery.value = SearchQuery(query = searchingQuery, currentPage = 1)
-        logDebug("Initialized new query", "query = ${currentQuery.value}")
+    private fun initializeNewQuery(query: String) {
+        pageOffset.update { 0 }
+        pendingPage.update { 1 }
+        amountToDownload.update { AMOUNT_TO_DOWNLOAD }
+        searchQuery.update { SearchQuery(query = query, currentPage = pendingPage.value!!) }
+        logDebug("Initialized new query", "query = ${searchQuery.value}")
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.processExistingQuery(
         existingQuery: SearchQuery,
     ) {
         logDebug("query exists in DB, reusing it")
-        currentQuery.update { it.copy(id = existingQuery.id) }
+        searchQuery.update { it.copy(id = existingQuery.id) }
 
         val gifs = checkGifsInLocalDB(existingQuery.id)
 
@@ -271,20 +275,30 @@ class GifsRepositoryImpl(
         else {
             logDebug("Enough saved gifs in DB, using them")
             emit(Result.Success(gifs))
+            pendingPage.value?.let { saveCurrentPage(it) }
         }
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.processNewQuery() {
-        val savingResult = dbManager.saveNewQuery(currentQuery.value)
+        // TODO: update a pending query with last one to use it for deleting a new saved one from db if smth goes wrong
+        pendingQuery.update { lastQuery.value }
+        logDebug("update pendingQuery - ${pendingQuery.value}")
+
+        // TODO: 1 - save new query to get a new id for query
+        val savingResult = dbManager.saveNewQuery(searchQuery.value)
 
         if (savingResult is Result.Error) {
             logDebug("Error saving new query", "error = ${savingResult.error.name}")
+            resetPendingEntities()
             emit(savingResult)
             return
         }
 
-        logDebug("Successfully saved new query", "queryId = ${lastQuery.value.id}")
-        currentQuery.update { it.copy(id = lastQuery.value.id) }
+        logDebug("Successfully save NewSearchQuery", "queryId = ${lastQuery.value}")
+
+        // TODO: after we save new query - last query update and here we get a new id from db for the search query
+        searchQuery.update { it.copy(id = lastQuery.value.id) }
+
         loadMoreGifsFromRemote(emptyList())
     }
 
@@ -292,11 +306,24 @@ class GifsRepositoryImpl(
         gifs: List<Gif>,
     ) {
         val savingResult = saveGifs(gifs)
-        if (savingResult is Result.Error) return
+        if (savingResult is Result.Error) {
+            restoreLastSuccessfulQuery()
+            resetPendingEntities()
+            return
+        }
 
         pendingPage.value?.let {
-            if (saveCurrentPage(it) is Result.Error) return
+            val result = saveCurrentPage(it)
+            if (result is Result.Error) {
+                restoreLastSuccessfulQuery()
+                resetPendingEntities()
+                return
+            }
         }
+
+        dbManager.markQueryAsSuccessful(searchQuery.value.id)
+
+        resetPendingEntities()
 
         logDebug(
             "Successfully update page in DB",
@@ -310,6 +337,11 @@ class GifsRepositoryImpl(
         )
     }
 
+    private suspend fun restoreLastSuccessfulQuery() {
+        pendingQuery.value?.let { dbManager.saveNewQuery(it) }
+        dbManager.clearUnsuccessfulSearchQueries()
+    }
+
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.saveGifs(
         gifs: List<Gif>,
     ): Result<Unit, DataError.Local> {
@@ -321,6 +353,11 @@ class GifsRepositoryImpl(
                 logDebug("GIFs saved successfully")
             }
         }
+    }
+
+    private fun resetPendingEntities() {
+        pendingQuery.update { null }
+        pendingPage.update { null }
     }
 
 }

@@ -10,6 +10,12 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SearchQueryDao {
 
+    @Query("DELETE FROM search_queries WHERE successful = 0")
+    suspend fun clearUnsuccessfulSearchQueries()
+
+    @Query("UPDATE search_queries SET successful = 1 WHERE id = :queryId")
+    suspend fun markQueryAsSuccessful(queryId: Long)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun saveQuery(query: SearchQueryEntity)
 

@@ -12,6 +12,8 @@ interface DbManager {
 
     val lastQuery: StateFlow<SearchQuery>
 
+    suspend fun clearUnsuccessfulSearchQueries()
+    suspend fun markQueryAsSuccessful(queryId: Long)
     fun isDbEmpty(): Flow<Boolean>
     suspend fun saveCurrentPage(queryId: Long, currentPage: Int): EmptyDataResult<DataError.Local>
     suspend fun saveNewQuery(entity: SearchQuery): EmptyDataResult<DataError.Local>

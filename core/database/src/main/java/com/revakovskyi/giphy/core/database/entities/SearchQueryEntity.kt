@@ -13,4 +13,5 @@ data class SearchQueryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "query") val query: String,
     @ColumnInfo(name = "current_page") val currentPage: Int,
+    @ColumnInfo(name = "successful") val wasSuccessful: Boolean = false,
 )

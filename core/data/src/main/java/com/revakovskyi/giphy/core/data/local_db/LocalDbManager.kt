@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -45,6 +46,7 @@ internal class LocalDbManager(
         scope.launch {
             ensureDefaultQueryExists()
             observeForLastQuery()
+            clearUnsuccessfulSearchQueries()
         }
     }
 
@@ -149,10 +151,18 @@ internal class LocalDbManager(
                 Log.d("TAG_Max", "LocalDbManager.kt: updatedQuery = $query")
                 Log.d("TAG_Max", "")
 
-                _lastQuery.value = query
+                _lastQuery.update { query }
             }
             .catch { e -> e.printStackTrace() }
             .launchIn(scope)
+    }
+
+    override suspend fun clearUnsuccessfulSearchQueries() {
+        searchQueryDao.clearUnsuccessfulSearchQueries()
+    }
+
+    override suspend fun markQueryAsSuccessful(queryId: Long) {
+        searchQueryDao.markQueryAsSuccessful(queryId)
     }
 
 }

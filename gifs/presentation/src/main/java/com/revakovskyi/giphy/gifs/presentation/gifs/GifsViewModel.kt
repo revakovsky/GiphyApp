@@ -93,7 +93,7 @@ class GifsViewModel(
             query to page
         }.flatMapLatest { (query, page) ->
             if (query.isNotEmpty()) {
-                gifsRepository.fetchGifsByRequest(searchingQuery = query, page = page)
+                gifsRepository.fetchGifsByRequest(query = query, page = page)
             } else emptyFlow()
         }.onEach { result ->
             handleRequestResult(result)
@@ -130,7 +130,7 @@ class GifsViewModel(
     }
 
     private fun processNewQuery() {
-        if (_currentInputQuery.value != state.value.searchingQuery) {
+        if (currentInputQuery.value != state.value.searchingQuery) {
             _state.update {
                 it.copy(isLoading = true, currentPage = 1, errorMessage = null)
             }
