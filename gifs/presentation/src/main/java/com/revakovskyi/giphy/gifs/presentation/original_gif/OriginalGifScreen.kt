@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,7 +22,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,9 +33,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.ImageLoader
 import com.revakovskyi.giphy.core.domain.gifs.Gif
 import com.revakovskyi.giphy.core.presentation.components.CoilImage
+import com.revakovskyi.giphy.core.presentation.components.GiphyIconButton
 import com.revakovskyi.giphy.core.presentation.components.GradientBackground
 import com.revakovskyi.giphy.core.presentation.components.LoadingDialog
 import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
+import com.revakovskyi.giphy.core.presentation.ui.theme.icons
 import com.revakovskyi.giphy.core.presentation.ui.uitls.SingleEvent
 import com.revakovskyi.giphy.core.presentation.ui.uitls.SnackBarController
 import com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarEvent
@@ -46,6 +51,7 @@ import org.koin.compose.koinInject
 fun OriginalGifScreenRoot(
     viewModel: OriginalGifViewModel = koinViewModel(),
     gif: Gif,
+    goBack: () -> Unit,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
 
@@ -70,6 +76,7 @@ fun OriginalGifScreenRoot(
 
     OriginalGifScreenScreen(
         state = state,
+        goBack = goBack,
         onAction = viewModel::onAction
     )
 
@@ -88,6 +95,7 @@ fun OriginalGifScreenRoot(
 @Composable
 private fun OriginalGifScreenScreen(
     state: OriginalGifState,
+    goBack: () -> Unit,
     onAction: (action: OriginalGifAction) -> Unit,
 ) {
 
@@ -162,6 +170,17 @@ private fun OriginalGifScreenScreen(
 
             }
 
+            GiphyIconButton(
+                contentDescription = stringResource(R.string.go_back),
+                icon = MaterialTheme.icons.clear,
+                containerColor = Color.Transparent,
+                onClick = goBack,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .alpha(0.35f)
+                    .padding(32.dp)
+            )
+
         }
 
     }
@@ -175,6 +194,7 @@ private fun OriginalGifScreenScreenPreview() {
     GiphyAppTheme {
         OriginalGifScreenScreen(
             state = OriginalGifState(),
+            goBack = {},
             onAction = {}
         )
     }

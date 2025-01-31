@@ -59,7 +59,10 @@ fun AppNavigation() {
         composable<Routes.Original>(
             typeMap = mapOf(typeOf<Gif>() to CustomNavType.PetType)
         ) {
-            OriginalGifScreenRoot(gif = it.toRoute<Routes.Original>().gif)
+            OriginalGifScreenRoot(
+                gif = it.toRoute<Routes.Original>().gif,
+                goBack = { navController.navigateUp() }
+            )
         }
 
     }
