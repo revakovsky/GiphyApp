@@ -85,7 +85,7 @@ internal class LocalDbManager(
                         id = existingQuery.id,
                         wasSuccessful = existingQuery.wasSuccessful,
                         timestamp = System.currentTimeMillis(),
-                        currentPage = lastQuery.value.currentPage
+                        currentPage = searchQuery.currentPage
                     )
                 )
             } ?: searchQueryDao.saveQuery(searchQuery.toEntity())
