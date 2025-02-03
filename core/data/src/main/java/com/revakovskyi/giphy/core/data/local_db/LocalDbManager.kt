@@ -51,6 +51,22 @@ internal class LocalDbManager(
     }
 
 
+    override suspend fun clearUnsuccessfulSearchQueries() {
+        searchQueryDao.clearUnsuccessfulSearchQueries()
+    }
+
+    override suspend fun markQueryAsSuccessful(queryId: Long) {
+        searchQueryDao.markQueryAsSuccessful(queryId)
+    }
+
+    override suspend fun updateMaxPosition(queryId: Long) {
+        val maxPosition = getMaxPosition(queryId)
+        searchQueryDao.updateMaxPosition(
+            queryId = queryId,
+            maxPosition = maxPosition,
+        )
+    }
+
     override fun isDbEmpty(): Flow<Boolean> {
         return gifsDao.isDbEmpty()
             .catch { e ->
@@ -59,12 +75,20 @@ internal class LocalDbManager(
             }
     }
 
-    override suspend fun saveCurrentPage(
-        queryId: Long,
-        currentPage: Int,
-    ): EmptyDataResult<DataError.Local> {
+    override suspend fun saveCurrentPage(currentPage: Int): EmptyDataResult<DataError.Local> {
         return safeDbCall {
-            searchQueryDao.saveCurrentPage(queryId, currentPage)
+            searchQueryDao.saveCurrentPage(lastQuery.value.id, currentPage)
+
+//            Log.d("TAG_Max", "LocalDbManager.kt: saveCurrentPage")
+//            Log.d("TAG_Max", "LocalDbManager.kt: currentPage = $currentPage")
+//            Log.d("TAG_Max", "LocalDbManager.kt: lastQuery = ${lastQuery.value}")
+//
+//            val lastQuery = lastQuery.value.copy(currentPage = currentPage)
+//
+//            Log.d("TAG_Max", "LocalDbManager.kt: lastQueryWithNewPage = $lastQuery")
+//            Log.d("TAG_Max", "")
+//
+//            searchQueryDao.updateQuery(lastQuery.toEntity())
         }
     }
 
@@ -84,11 +108,11 @@ internal class LocalDbManager(
             } else {
 
                 Log.d("TAG_Max", "LocalDbManager.kt: updateQuery")
-
                 val copy = searchQuery.toEntity().copy(
                     id = existingQuery.id,
                     wasSuccessful = existingQuery.wasSuccessful,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    currentPage = lastQuery.value.currentPage
                 )
                 searchQueryDao.updateQuery(copy)
             }
@@ -107,7 +131,18 @@ internal class LocalDbManager(
             Log.d("TAG_Max", "LocalDbManager.kt: lastQuery = $queryId")
             Log.d("TAG_Max", "")
 
-            gifsDao.saveGifs(gifs.map { it.toEntity() })
+//            gifsDao.saveGifs(gifs.map { it.toEntity() })
+
+            val maxPosition = getMaxPosition(queryId)
+
+            Log.d("TAG_Max", "LocalDbManager.kt: currentMaxPosition = $maxPosition")
+
+            // 2. Обновляем `position` у новых GIF'ок
+            val updatedGifs = gifs.mapIndexed { index, gif ->
+                gif.toEntity().copy(position = maxPosition + index + 1)
+            }
+
+            gifsDao.saveGifs(updatedGifs)
         }
     }
 
@@ -120,6 +155,9 @@ internal class LocalDbManager(
             val gifs = gifsDao.getGifsByQuery(queryId, gifsAmount, pageOffset).map { it.toDomain() }
 
             Log.d("TAG_Max", "LocalDbManager.kt: observeGifsFromDbByQuery")
+            Log.d("TAG_Max", "LocalDbManager.kt: queryId = $queryId")
+            Log.d("TAG_Max", "LocalDbManager.kt: gifsAmount = $gifsAmount")
+            Log.d("TAG_Max", "LocalDbManager.kt: pageOffset = $pageOffset")
             Log.d("TAG_Max", "LocalDbManager.kt: gifs = $gifs")
             Log.d("TAG_Max", "")
 
@@ -161,12 +199,21 @@ internal class LocalDbManager(
         }
     }
 
-    override suspend fun clearUnsuccessfulSearchQueries() {
-        searchQueryDao.clearUnsuccessfulSearchQueries()
+    override suspend fun deleteGif(gifId: String): EmptyDataResult<DataError.Local> {
+        return safeDbCall {
+            gifsDao.deleteGif(gifId)
+        }
     }
 
-    override suspend fun markQueryAsSuccessful(queryId: Long) {
-        searchQueryDao.markQueryAsSuccessful(queryId)
+    override suspend fun getMaxPosition(queryId: Long): Int {
+        return gifsDao.getMaxPosition(queryId) ?: 0
+    }
+
+    override suspend fun updateDeletedGifsCount(deletedGifsAmount: Int) {
+        searchQueryDao.updateDeletedGifsCount(
+            queryId = lastQuery.value.id,
+            deletedGifsAmount = deletedGifsAmount
+        )
     }
 
     private suspend fun ensureDefaultQueryExists() {

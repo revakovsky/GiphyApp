@@ -8,4 +8,5 @@ data class Gif(
     val queryId: Long,
     val urlSmallImage: String,
     val urlOriginalImage: String,
+    val position: Int,
 )

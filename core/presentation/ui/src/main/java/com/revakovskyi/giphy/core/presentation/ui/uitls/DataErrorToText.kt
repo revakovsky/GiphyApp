@@ -8,6 +8,7 @@ fun DataError.asUiText(): UiText {
         DataError.Local.DISK_FULL -> UiText.StringResource(R.string.error_disk_full)
         DataError.Local.UNKNOWN -> UiText.StringResource(R.string.error_db_unknown)
         DataError.Local.THE_SAME_DATA -> UiText.DynamicString("")
+        DataError.Local.CAN_NOT_ADD_GIF -> UiText.StringResource(R.string.error_can_not_add_gif)
 
         DataError.Network.BAD_REQUEST -> UiText.StringResource(R.string.error_bad_request)
         DataError.Network.UNAUTHORIZED -> UiText.StringResource(R.string.error_unauthorized)

@@ -64,12 +64,12 @@ fun GifsSection(
             ) { gif ->
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .animateContentSize()
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.animateContentSize()
                 ) {
 
                     CoilImage(
+                        modifier = Modifier.fillMaxSize(),
                         imageLoader = imageLoader,
                         url = gif.urlSmallImage,
                         onImageClick = { onAction(GifsAction.OpenOriginalGif(gif)) },

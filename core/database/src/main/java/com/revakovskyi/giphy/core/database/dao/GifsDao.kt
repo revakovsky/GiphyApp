@@ -15,10 +15,16 @@ interface GifsDao {
     @Upsert
     suspend fun saveGifs(gifs: List<GifEntity>)
 
-    @Query("SELECT * FROM gifs WHERE query_id = :queryId LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM gifs WHERE query_id = :queryId ORDER BY position ASC LIMIT :limit OFFSET :offset")
     suspend fun getGifsByQuery(queryId: Long, limit: Int, offset: Int): List<GifEntity>
 
     @Query("SELECT * FROM gifs WHERE query_id = :queryId")
     fun getGifsByQueryId(queryId: Long): Flow<List<GifEntity>>
+
+    @Query("SELECT MAX(position) FROM gifs WHERE query_id = :queryId")
+    suspend fun getMaxPosition(queryId: Long): Int?
+
+    @Query("DELETE FROM gifs WHERE gif_id = :gifId")
+    suspend fun deleteGif(gifId: String)
 
 }

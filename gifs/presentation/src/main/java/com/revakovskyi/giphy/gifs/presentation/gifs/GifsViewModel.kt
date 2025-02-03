@@ -140,6 +140,7 @@ class GifsViewModel(
             is Result.Success -> {
 
                 Log.d("TAG_Max", "GifsViewModel.kt: gifs = ${result.data}")
+                Log.d("TAG_Max", "GifsViewModel.kt: size = ${result.data.size}")
                 Log.d("TAG_Max", "")
 
                 _state.update {
@@ -209,20 +210,74 @@ class GifsViewModel(
     }
 
     private fun deleteGif(gifId: String) {
-//        gifsRepository.deleteGif(gifId)
-//            .onEach { result ->
-//                when (result) {
-//                    is Result.Error -> _event.send(GifsEvent.ShowNotification(result.error.asUiText()))
-//
-//                    is Result.Success -> {
-//                        _event.send(
-//                            GifsEvent.ShowNotification(
-//                                UiText.StringResource(R.string.successfully_deleted)
-//                            )
-//                        )
-//                    }
-//                }
-//            }.launchIn(viewModelScope)
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+
+            gifsRepository.deleteGif(gifId).also { deletingResult ->
+                when (deletingResult) {
+                    is Result.Error -> handleErrorResult(deletingResult)
+                    is Result.Success -> {
+
+                        Log.d(
+                            "TAG_Max",
+                            "GifsViewModel.kt: gif was deleted, start fetching a new one"
+                        )
+                        Log.d("TAG_Max", "")
+
+                        deleteGifFromScreen(gifId)
+                        replaceDeletedGif(gifId)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun deleteGifFromScreen(gifId: String) {
+        val updatedGifsList = state.value.gifs.filterNot { it.id == gifId }
+        _state.update { it.copy(gifs = updatedGifsList) }
+    }
+
+    private suspend fun replaceDeletedGif(gifId: String) {
+        gifsRepository.provideNewGif().also { result ->
+            when (result) {
+                is Result.Error -> {
+
+                    Log.d(
+                        "TAG_Max",
+                        "GifsViewModel.kt: Error with fetching a new gif instead of deleted"
+                    )
+                    Log.d("TAG_Max", "")
+
+                    _state.update { it.copy(isLoading = false) }
+                    handleErrorResult(result)
+                }
+
+                is Result.Success -> {
+
+                    Log.d("TAG_Max", "GifsViewModel.kt: Success - we receive a new gif")
+                    Log.d("TAG_Max", "GifsViewModel.kt: gif = ${result.data}")
+                    Log.d("TAG_Max", "")
+
+                    state.value.gifs.forEach {
+                        Log.d("TAG_Max", "GifsViewModel.kt: gif - $it")
+                    }
+                    Log.d("TAG_Max", "")
+
+                    val existingGifIds = state.value.gifs.map { it.id }.toSet()
+                    if (result.data.id !in existingGifIds) {
+                        _state.update {
+                            it.copy(
+                                gifs = state.value.gifs + result.data,
+                                isLoading = false,
+                            )
+                        }
+                    } else {
+                        _state.update { it.copy(isLoading = false) }
+                        handleErrorResult(Result.Error(DataError.Local.CAN_NOT_ADD_GIF))
+                    }
+                }
+            }
+        }
     }
 
 }

@@ -15,4 +15,6 @@ data class SearchQueryEntity(
     @ColumnInfo(name = "current_page") val currentPage: Int,
     @ColumnInfo(name = "successful") val wasSuccessful: Boolean = false,
     @ColumnInfo(name = "timestamp") val timestamp: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "deleted_gifs_amount") val deletedGifsAmount: Int = 0,
+    @ColumnInfo(name = "max_position") val maxGifPositionInTable: Int = 0
 )

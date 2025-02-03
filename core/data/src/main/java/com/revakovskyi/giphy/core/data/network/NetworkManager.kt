@@ -71,7 +71,13 @@ internal class NetworkManagerImpl(
 
         return when (result) {
             is Result.Error -> result
-            is Result.Success -> Result.Success(result.data.data.map { it.toDomain(query.id) })
+            is Result.Success -> {
+                Result.Success(
+                    result.data.data.mapIndexed { index, gifDto ->
+                        gifDto.toDomain(query.id, index)
+                    }
+                )
+            }
         }
     }
 

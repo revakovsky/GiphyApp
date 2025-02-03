@@ -48,4 +48,10 @@ interface SearchQueryDao {
     )
     suspend fun deleteOldQueries(limit: Int = 100)
 
+    @Query("UPDATE search_queries SET max_position = :maxPosition WHERE id = :queryId")
+    suspend fun updateMaxPosition(queryId: Long, maxPosition: Int)
+
+    @Query("UPDATE search_queries SET deleted_gifs_amount = :deletedGifsAmount WHERE id = :queryId")
+    suspend fun updateDeletedGifsCount(queryId: Long, deletedGifsAmount: Int)
+
 }

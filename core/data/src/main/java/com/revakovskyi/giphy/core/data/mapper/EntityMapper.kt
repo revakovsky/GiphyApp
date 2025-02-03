@@ -9,7 +9,9 @@ fun SearchQueryEntity.toDomain(): SearchQuery {
     return SearchQuery(
         id = id,
         query = query,
-        currentPage = currentPage
+        currentPage = currentPage,
+        deletedGifsAmount = deletedGifsAmount,
+        maxGifPositionInTable = maxGifPositionInTable,
     )
 }
 
@@ -18,6 +20,8 @@ fun SearchQuery.toEntity(): SearchQueryEntity {
         query = query,
         currentPage = currentPage,
         timestamp = System.currentTimeMillis(),
+        maxGifPositionInTable = maxGifPositionInTable,
+        deletedGifsAmount = deletedGifsAmount,
     )
 }
 
@@ -26,7 +30,8 @@ fun GifEntity.toDomain(): Gif {
         id = gifId,
         queryId = queryId,
         urlSmallImage = urlSmallImage,
-        urlOriginalImage = urlOriginalImage
+        urlOriginalImage = urlOriginalImage,
+        position = position,
     )
 }
 
@@ -36,5 +41,6 @@ fun Gif.toEntity(): GifEntity {
         queryId = queryId,
         urlSmallImage = urlSmallImage,
         urlOriginalImage = urlOriginalImage,
+        position = position
     )
 }

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "06565f2f33c641e58b8f0bf4f19ec54d",
+    "identityHash": "e4d900b66a31cde6ba657d2570908534",
     "entities": [
       {
         "tableName": "gifs",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`gif_id` TEXT NOT NULL, `query_id` INTEGER NOT NULL, `url_small` TEXT NOT NULL, `url_original` TEXT NOT NULL, PRIMARY KEY(`gif_id`), FOREIGN KEY(`query_id`) REFERENCES `search_queries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`gif_id` TEXT NOT NULL, `query_id` INTEGER NOT NULL, `url_small` TEXT NOT NULL, `url_original` TEXT NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`gif_id`), FOREIGN KEY(`query_id`) REFERENCES `search_queries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "gifId",
@@ -30,6 +30,12 @@
             "fieldPath": "urlOriginalImage",
             "columnName": "url_original",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -66,7 +72,7 @@
       },
       {
         "tableName": "search_queries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `query` TEXT NOT NULL, `current_page` INTEGER NOT NULL, `successful` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `query` TEXT NOT NULL, `current_page` INTEGER NOT NULL, `successful` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `deleted_gifs_amount` INTEGER NOT NULL, `max_position` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -97,6 +103,18 @@
             "columnName": "timestamp",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "deletedGifsAmount",
+            "columnName": "deleted_gifs_amount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxGifPositionInTable",
+            "columnName": "max_position",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -122,7 +140,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '06565f2f33c641e58b8f0bf4f19ec54d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e4d900b66a31cde6ba657d2570908534')"
     ]
   }
 }

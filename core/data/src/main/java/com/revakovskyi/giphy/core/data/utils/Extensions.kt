@@ -47,10 +47,10 @@ suspend inline fun <reified T> responseToResult(response: Response<T>): Result<T
 }
 
 
-suspend inline fun <T> safeDbCall(action: () -> T): EmptyDataResult<DataError.Local> {
+suspend inline fun <T> safeDbCall(action: () -> T): Result<T, DataError.Local>/*EmptyDataResult<DataError.Local>*/ {
     return try {
-        action()
-        Result.Success(Unit)
+//        action()
+        Result.Success(action())
     } catch (e: SQLiteFullException) {
         e.printStackTrace()
 
