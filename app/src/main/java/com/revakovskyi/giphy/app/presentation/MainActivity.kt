@@ -27,11 +27,11 @@ import com.revakovskyi.giphy.app.R
 import com.revakovskyi.giphy.app.navigation.AppNavigation
 import com.revakovskyi.giphy.app.presentation.components.NoInternetScreen
 import com.revakovskyi.giphy.core.presentation.components.DefaultSnackBarHost
-import com.revakovskyi.giphy.core.presentation.theme.GiphyAppTheme
-import com.revakovskyi.giphy.core.presentation.uitls.SingleEvent
-import com.revakovskyi.giphy.core.presentation.uitls.SnackBarController
-import com.revakovskyi.giphy.core.presentation.uitls.snack_bar_models.SnackBarAction
-import com.revakovskyi.giphy.core.presentation.uitls.snack_bar_models.SnackBarEvent
+import com.revakovskyi.giphy.core.presentation.ui.theme.GiphyAppTheme
+import com.revakovskyi.giphy.core.presentation.ui.uitls.SingleEvent
+import com.revakovskyi.giphy.core.presentation.ui.uitls.SnackBarController
+import com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarAction
+import com.revakovskyi.giphy.core.presentation.ui.uitls.snack_bar_models.SnackBarEvent
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -93,7 +93,7 @@ private fun MainContent(
                             message = context.getString(R.string.no_internet_connection),
                             action = SnackBarAction(
                                 name = context.getString(R.string.settings),
-                                action = { settingsLauncher?.launch(Intent(Settings.ACTION_WIFI_SETTINGS)) }
+                                action = { settingsLauncher.launch(Intent(Settings.ACTION_WIFI_SETTINGS)) }
                             )
                         )
                     )

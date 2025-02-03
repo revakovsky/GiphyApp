@@ -21,5 +21,7 @@ import androidx.room.PrimaryKey
 data class GifEntity(
     @PrimaryKey @ColumnInfo(name = "gif_id") val gifId: String,
     @ColumnInfo(name = "query_id") val queryId: Long,
-    @ColumnInfo(name = "url") val url: String,
+    @ColumnInfo(name = "url_small") val urlSmallImage: String,
+    @ColumnInfo(name = "url_original") val urlOriginalImage: String,
+    @ColumnInfo(name = "position") val position: Int,
 )

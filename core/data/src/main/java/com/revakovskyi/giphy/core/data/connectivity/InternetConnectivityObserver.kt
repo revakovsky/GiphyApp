@@ -25,10 +25,7 @@ internal class InternetConnectivityObserver(context: Context) : ConnectivityObse
             val callback = createNetworkCallback()
             connectivityManager.registerDefaultNetworkCallback(callback)
 
-            awaitClose {
-                connectivityManager.unregisterNetworkCallback(callback)
-            }
-
+            awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
         }.distinctUntilChanged()
 
 

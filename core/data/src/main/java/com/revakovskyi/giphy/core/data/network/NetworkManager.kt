@@ -1,10 +1,11 @@
 package com.revakovskyi.giphy.core.data.network
 
 import com.revakovskyi.giphy.core.data.mapper.toDomain
+import com.revakovskyi.giphy.core.data.utils.safeCall
 import com.revakovskyi.giphy.core.domain.connectivity.ConnectivityObserver
 import com.revakovskyi.giphy.core.domain.connectivity.InternetStatus
-import com.revakovskyi.giphy.core.domain.gifs.models.Gif
-import com.revakovskyi.giphy.core.domain.gifs.models.SearchQuery
+import com.revakovskyi.giphy.core.domain.gifs.Gif
+import com.revakovskyi.giphy.core.domain.gifs.SearchQuery
 import com.revakovskyi.giphy.core.domain.util.DataError
 import com.revakovskyi.giphy.core.domain.util.Result
 import com.revakovskyi.giphy.core.network.ApiService
@@ -17,12 +18,13 @@ import kotlinx.coroutines.flow.stateIn
 
 interface NetworkManager {
 
-    suspend fun loadGifsFromRemote(
+    suspend fun fetchGifsFromApi(
         query: SearchQuery,
         offset: Int,
-    ): Result<List<Gif>, DataError.Network>
-
-    suspend fun getGifById(gifId: String): Result<Gif, DataError.Network>
+        limit: Int,
+        onSuccess: suspend (success: Result.Success<List<Gif>>) -> Unit,
+        onError: suspend (error: Result.Error<DataError.Network>) -> Unit,
+    )
 
 }
 
@@ -41,38 +43,51 @@ internal class NetworkManagerImpl(
             initialValue = InternetStatus.Available
         )
 
-    override suspend fun loadGifsFromRemote(
+
+    override suspend fun fetchGifsFromApi(
         query: SearchQuery,
         offset: Int,
-    ): Result<List<Gif>, DataError.Network> {
-        return if (internetStatus.value == InternetStatus.Available) {
-            val result = safeCall {
-                apiService.getGifsByQuery(query = query.query, offset = offset)
-            }
+        limit: Int,
+        onSuccess: suspend (success: Result.Success<List<Gif>>) -> Unit,
+        onError: suspend (error: Result.Error<DataError.Network>) -> Unit,
+    ) {
+        if (internetStatus.value == InternetStatus.Available) {
+            val networkResult = fetchGifs(
+                query = query,
+                offset = offset,
+                amountToDownload = limit
+            )
 
-            when (result) {
-                is Result.Error -> result
-
-                is Result.Success -> {
-                    Result.Success(
-                        result.data.data.map { it.toDomain() }
-                    )
-                }
+            when (networkResult) {
+                is Result.Success -> onSuccess(networkResult)
+                is Result.Error -> onError(networkResult)
             }
-        } else Result.Error(DataError.Network.NO_INTERNET)
+        } else onError(Result.Error(DataError.Network.NO_INTERNET))
     }
 
-    override suspend fun getGifById(gifId: String): Result<Gif, DataError.Network> {
-        return if (internetStatus.value == InternetStatus.Available) {
-            val result = safeCall {
-                apiService.getGifById(gifId = gifId)
-            }
+    private suspend fun fetchGifs(
+        query: SearchQuery,
+        offset: Int,
+        amountToDownload: Int,
+    ): Result<List<Gif>, DataError.Network> {
+        val result = safeCall {
+            apiService.getGifsByQuery(
+                query = query.query,
+                offset = offset,
+                limit = amountToDownload
+            )
+        }
 
-            when (result) {
-                is Result.Error -> Result.Error(result.error)
-                is Result.Success -> Result.Success(result.data.gifInfo.toDomain())
+        return when (result) {
+            is Result.Error -> result
+            is Result.Success -> {
+                Result.Success(
+                    result.data.data.mapIndexed { index, gifDto ->
+                        gifDto.toDomain(query.id, index)
+                    }
+                )
             }
-        } else return Result.Error(DataError.Network.NO_INTERNET)
+        }
     }
 
 }

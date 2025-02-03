@@ -1,6 +1,5 @@
 package com.revakovskyi.giphy.app.presentation
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revakovskyi.giphy.core.data.local_db.DbManager
@@ -30,15 +29,10 @@ class MainViewModel(
     }
 
     private fun observeData() {
-        val internetStatusFlow = connectivityObserver.internetStatus
-        val isDataBaseEmpty = dbManager.isDbEmpty()
-
-        combine(internetStatusFlow, isDataBaseEmpty) { internetStatus, isDbEmpty ->
-
-            Log.d("TAG_Max", "MainViewModel.kt: internetStatus = $internetStatus")
-            Log.d("TAG_Max", "MainViewModel.kt: isDbEmpty = $isDbEmpty")
-            Log.d("TAG_Max", "")
-
+        combine(
+            connectivityObserver.internetStatus,
+            dbManager.isDbEmpty()
+        ) { internetStatus, isDbEmpty ->
             determineState(internetStatus, isDbEmpty)
         }.onEach { newState ->
             _state.value = newState

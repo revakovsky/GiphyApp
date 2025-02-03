@@ -20,6 +20,8 @@ sealed interface DataError : Error {
     enum class Local : DataError {
         DISK_FULL,
         UNKNOWN,
+        THE_SAME_DATA,
+        CAN_NOT_ADD_GIF,
     }
 
 }

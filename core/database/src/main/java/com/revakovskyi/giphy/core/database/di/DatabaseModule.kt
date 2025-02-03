@@ -2,7 +2,6 @@ package com.revakovskyi.giphy.core.database.di
 
 import androidx.room.Room
 import com.revakovskyi.giphy.core.database.GifsDB
-import com.revakovskyi.giphy.core.database.dao.DeletedGifsDao
 import com.revakovskyi.giphy.core.database.dao.GifsDao
 import com.revakovskyi.giphy.core.database.dao.SearchQueryDao
 import org.koin.android.ext.koin.androidContext
@@ -22,6 +21,5 @@ val databaseModule = module {
 
     single<GifsDao> { get<GifsDB>().gifsDao }
     single<SearchQueryDao> { get<GifsDB>().searchQueryDao }
-    single<DeletedGifsDao> { get<GifsDB>().deletedGifsDao }
 
 }

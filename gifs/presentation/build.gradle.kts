@@ -39,7 +39,8 @@ android {
 dependencies {
 
     // Modules
-    implementation(projects.core.presentation)
+    implementation(projects.core.presentation.ui)
+    implementation(projects.core.presentation.components)
     implementation(projects.gifs.domain)
 
     // Core
@@ -55,5 +56,8 @@ dependencies {
 
     // Koin
     implementation(libs.bundles.koin)
+
+    // Coil
+    implementation(libs.bundles.coil)
 
 }

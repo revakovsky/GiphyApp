@@ -59,7 +59,8 @@ dependencies {
     implementation(projects.core.database)
     implementation(projects.core.data)
     implementation(projects.core.domain)
-    implementation(projects.core.presentation)
+    implementation(projects.core.presentation.ui)
+    implementation(projects.core.presentation.components)
 
     implementation(projects.gifs.data)
     implementation(projects.gifs.domain)
