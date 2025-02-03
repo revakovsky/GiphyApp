@@ -22,7 +22,9 @@ interface NetworkManager {
         query: SearchQuery,
         offset: Int,
         limit: Int,
-    ): Result<List<Gif>, DataError.Network>
+        onSuccess: suspend (success: Result.Success<List<Gif>>) -> Unit,
+        onError: suspend (error: Result.Error<DataError.Network>) -> Unit,
+    )
 
 }
 
@@ -46,14 +48,21 @@ internal class NetworkManagerImpl(
         query: SearchQuery,
         offset: Int,
         limit: Int,
-    ): Result<List<Gif>, DataError.Network> {
-        return if (internetStatus.value == InternetStatus.Available) {
-            fetchGifs(
+        onSuccess: suspend (success: Result.Success<List<Gif>>) -> Unit,
+        onError: suspend (error: Result.Error<DataError.Network>) -> Unit,
+    ) {
+        if (internetStatus.value == InternetStatus.Available) {
+            val networkResult = fetchGifs(
                 query = query,
                 offset = offset,
                 amountToDownload = limit
             )
-        } else Result.Error(DataError.Network.NO_INTERNET)
+
+            when (networkResult) {
+                is Result.Success -> onSuccess(networkResult)
+                is Result.Error -> onError(networkResult)
+            }
+        } else onError(Result.Error(DataError.Network.NO_INTERNET))
     }
 
     private suspend fun fetchGifs(
