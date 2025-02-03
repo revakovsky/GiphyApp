@@ -59,9 +59,9 @@ internal class LocalDbManager(
         searchQueryDao.markQueryAsSuccessful(queryId)
     }
 
-    override suspend fun updateMaxPosition(queryId: Long) {
-        val maxPosition = getMaxPosition(queryId)
-        searchQueryDao.updateMaxPosition(
+    override suspend fun updateGifsMaxPosition(queryId: Long) {
+        val maxPosition = getMaxGifPosition(queryId)
+        searchQueryDao.updateGifsMaxPosition(
             queryId = queryId,
             maxPosition = maxPosition,
         )
@@ -133,7 +133,7 @@ internal class LocalDbManager(
 
 //            gifsDao.saveGifs(gifs.map { it.toEntity() })
 
-            val maxPosition = getMaxPosition(queryId)
+            val maxPosition = getMaxGifPosition(queryId)
 
             Log.d("TAG_Max", "LocalDbManager.kt: currentMaxPosition = $maxPosition")
 
@@ -146,7 +146,7 @@ internal class LocalDbManager(
         }
     }
 
-    override suspend fun observeGifsFromDbByQuery(
+    override suspend fun getGifsByQuery(
         queryId: Long,
         gifsAmount: Int,
         pageOffset: Int,
@@ -177,7 +177,7 @@ internal class LocalDbManager(
         }
     }
 
-    override suspend fun getQueryByText(queryText: String): SearchQuery? {
+    override suspend fun getSearchQueryByQueryText(queryText: String): SearchQuery? {
         return searchQueryDao.getQueryByText(queryText)?.toDomain()
     }
 
@@ -205,12 +205,12 @@ internal class LocalDbManager(
         }
     }
 
-    override suspend fun getMaxPosition(queryId: Long): Int {
-        return gifsDao.getMaxPosition(queryId) ?: 0
+    override suspend fun getMaxGifPosition(queryId: Long): Int {
+        return gifsDao.getMaxGifPosition(queryId) ?: 0
     }
 
-    override suspend fun updateDeletedGifsCount(deletedGifsAmount: Int) {
-        searchQueryDao.updateDeletedGifsCount(
+    override suspend fun updateDeletedGifsAmount(deletedGifsAmount: Int) {
+        searchQueryDao.updateDeletedGifsAmount(
             queryId = lastQuery.value.id,
             deletedGifsAmount = deletedGifsAmount
         )

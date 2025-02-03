@@ -30,13 +30,13 @@ class OriginalGifViewModel(
 
     fun onAction(action: OriginalGifAction) {
         when (action) {
-            is OriginalGifAction.InitializeGif -> fetchOriginalGifs(action.gif)
+            is OriginalGifAction.InitializeGif -> getOriginalGifs(action.gif)
             is OriginalGifAction.UpdateCurrentIndex -> updateCurrentIndex(action.index)
         }
     }
 
-    private fun fetchOriginalGifs(gif: Gif) {
-        gifsRepository.getGifsByQueryId(gif.queryId)
+    private fun getOriginalGifs(gif: Gif) {
+        gifsRepository.getOriginalGifsByQueryId(gif.queryId)
             .onEach { result ->
                 when (result) {
                     is Result.Error -> processErrorResult(result)
@@ -58,13 +58,7 @@ class OriginalGifViewModel(
         val gifs = result.data
         val currentIndex = gifs.indexOfFirst { it.id == gif.id }
 
-        _state.update {
-            it.copy(
-                gifs = gifs,
-                currentIndex = currentIndex,
-                isLoading = false,
-            )
-        }
+        _state.update { it.copy(gifs = gifs, currentIndex = currentIndex, isLoading = false) }
     }
 
     private suspend fun handleErrorResult(result: Result.Error<DataError>) {

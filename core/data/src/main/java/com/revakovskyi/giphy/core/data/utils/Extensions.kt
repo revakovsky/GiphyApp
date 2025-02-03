@@ -1,9 +1,7 @@
 package com.revakovskyi.giphy.core.data.utils
 
 import android.database.sqlite.SQLiteFullException
-import android.util.Log
 import com.revakovskyi.giphy.core.domain.util.DataError
-import com.revakovskyi.giphy.core.domain.util.EmptyDataResult
 import com.revakovskyi.giphy.core.domain.util.Result
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
@@ -35,6 +33,7 @@ suspend inline fun <reified T> responseToResult(response: Response<T>): Result<T
             response.body()?.let { Result.Success(it) }
                 ?: Result.Error(DataError.Network.SERIALIZATION)
         }
+
         400 -> Result.Error(DataError.Network.BAD_REQUEST)
         401 -> Result.Error(DataError.Network.UNAUTHORIZED)
         403 -> Result.Error(DataError.Network.FORBIDDEN)
@@ -47,23 +46,14 @@ suspend inline fun <reified T> responseToResult(response: Response<T>): Result<T
 }
 
 
-suspend inline fun <T> safeDbCall(action: () -> T): Result<T, DataError.Local>/*EmptyDataResult<DataError.Local>*/ {
+suspend inline fun <T> safeDbCall(action: () -> T): Result<T, DataError.Local> {
     return try {
-//        action()
         Result.Success(action())
     } catch (e: SQLiteFullException) {
         e.printStackTrace()
-
-        Log.d("TAG_Max", "Extensions.kt: safeDbCall error - ${e.localizedMessage}")
-        Log.d("TAG_Max", "")
-
         Result.Error(DataError.Local.DISK_FULL)
     } catch (e: Exception) {
         e.printStackTrace()
-
-        Log.d("TAG_Max", "Extensions.kt: safeDbCall error - ${e.localizedMessage}")
-        Log.d("TAG_Max", "")
-
         if (e is CancellationException) throw e
         Result.Error(DataError.Local.UNKNOWN)
     }

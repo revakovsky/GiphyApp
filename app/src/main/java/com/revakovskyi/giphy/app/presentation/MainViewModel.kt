@@ -29,10 +29,10 @@ class MainViewModel(
     }
 
     private fun observeData() {
-        val internetStatusFlow = connectivityObserver.internetStatus
-        val isDataBaseEmpty = dbManager.isDbEmpty()
-
-        combine(internetStatusFlow, isDataBaseEmpty) { internetStatus, isDbEmpty ->
+        combine(
+            connectivityObserver.internetStatus,
+            dbManager.isDbEmpty()
+        ) { internetStatus, isDbEmpty ->
             determineState(internetStatus, isDbEmpty)
         }.onEach { newState ->
             _state.value = newState

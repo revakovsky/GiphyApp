@@ -18,10 +18,10 @@ import kotlinx.coroutines.flow.stateIn
 
 interface NetworkManager {
 
-    suspend fun loadGifsFromRemote(
+    suspend fun fetchGifsFromApi(
         query: SearchQuery,
         offset: Int,
-        amountToDownload: Int,
+        limit: Int,
     ): Result<List<Gif>, DataError.Network>
 
 }
@@ -42,21 +42,21 @@ internal class NetworkManagerImpl(
         )
 
 
-    override suspend fun loadGifsFromRemote(
+    override suspend fun fetchGifsFromApi(
         query: SearchQuery,
         offset: Int,
-        amountToDownload: Int,
+        limit: Int,
     ): Result<List<Gif>, DataError.Network> {
         return if (internetStatus.value == InternetStatus.Available) {
-            safeLoadGifs(
+            fetchGifs(
                 query = query,
                 offset = offset,
-                amountToDownload = amountToDownload
+                amountToDownload = limit
             )
         } else Result.Error(DataError.Network.NO_INTERNET)
     }
 
-    private suspend fun safeLoadGifs(
+    private suspend fun fetchGifs(
         query: SearchQuery,
         offset: Int,
         amountToDownload: Int,

@@ -79,7 +79,7 @@ class GifsViewModel(
         ) { query, page ->
             query to page
         }.flatMapLatest { (query, page) ->
-            if (query.isNotEmpty()) gifsRepository.fetchGifsByQuery(query = query, page = page)
+            if (query.isNotEmpty()) gifsRepository.getGifsByQuery(query = query, page = page)
             else emptyFlow()
         }.onEach { result ->
             handleSearchRequestResult(result)

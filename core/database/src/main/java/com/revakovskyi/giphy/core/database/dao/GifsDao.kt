@@ -22,7 +22,7 @@ interface GifsDao {
     fun getGifsByQueryId(queryId: Long): Flow<List<GifEntity>>
 
     @Query("SELECT MAX(position) FROM gifs WHERE query_id = :queryId")
-    suspend fun getMaxPosition(queryId: Long): Int?
+    suspend fun getMaxGifPosition(queryId: Long): Int?
 
     @Query("DELETE FROM gifs WHERE gif_id = :gifId")
     suspend fun deleteGif(gifId: String)

@@ -12,23 +12,22 @@ interface DbManager {
 
     val lastQuery: StateFlow<SearchQuery>
 
+    fun isDbEmpty(): Flow<Boolean>
     suspend fun clearUnsuccessfulSearchQueries()
     suspend fun markQueryAsSuccessful(queryId: Long)
-    suspend fun updateMaxPosition(queryId: Long)
-    fun isDbEmpty(): Flow<Boolean>
+    suspend fun updateGifsMaxPosition(queryId: Long)
     suspend fun saveCurrentPage(currentPage: Int): EmptyDataResult<DataError.Local>
     suspend fun saveOrUpdateQuery(searchQuery: SearchQuery): EmptyDataResult<DataError.Local>
     suspend fun saveGifs(gifs: List<Gif>): EmptyDataResult<DataError.Local>
-    suspend fun observeGifsFromDbByQuery(
+    suspend fun getGifsByQuery(
         queryId: Long,
         gifsAmount: Int,
         pageOffset: Int,
     ): Result<List<Gif>, DataError.Local>
-
-    suspend fun getQueryByText(queryText: String): SearchQuery?
     fun getGifsByQueryId(queryId: Long): Flow<Result<List<Gif>, DataError.Local>>
+    suspend fun getSearchQueryByQueryText(queryText: String): SearchQuery?
     suspend fun deleteGif(gifId: String): EmptyDataResult<DataError.Local>
-    suspend fun getMaxPosition(queryId: Long): Int
-    suspend fun updateDeletedGifsCount(deletedGifsAmount: Int)
+    suspend fun getMaxGifPosition(queryId: Long): Int
+    suspend fun updateDeletedGifsAmount(deletedGifsAmount: Int)
 
 }
