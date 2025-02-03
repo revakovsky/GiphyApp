@@ -1,6 +1,5 @@
 package com.revakovskyi.giphy.gifs.presentation.gifs
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revakovskyi.giphy.core.domain.gifs.Gif
@@ -48,7 +47,7 @@ class GifsViewModel(
 
 
     init {
-        viewModelScope.launch { handleLastQuery() }
+        handleLastQuery()
         observeQueryAndPageChanges()
     }
 
@@ -64,138 +63,52 @@ class GifsViewModel(
         }
     }
 
-    private suspend fun handleLastQuery() {
-        val lastQuery = gifsRepository.observeLastQuery().first()
+    private fun handleLastQuery() {
+        viewModelScope.launch {
+            val lastQuery = gifsRepository.observeLastQuery().first()
 
-        Log.d("TAG_Max", "GifsViewModel.kt: gotten lastQuery = $lastQuery")
-        Log.d("TAG_Max", "")
-
-        if (lastQuery.query.isNotEmpty()) updateSearchingQuery(lastQuery)
-        else _state.update { it.copy(isLoading = false) }
+            if (lastQuery.query.isNotEmpty()) updateSearchingQuery(lastQuery)
+            else loadingState(false)
+        }
     }
-
-    private fun updateSearchingQuery(lastQuery: SearchQuery) {
-        val text = lastQuery.query
-        _state.update { it.copy(searchingQuery = text) }
-        _currentInputQuery.update { text }
-    }
-
 
     private fun observeQueryAndPageChanges() {
         combine(
             currentInputQuery,
             state.map { it.currentPage }.distinctUntilChanged()
         ) { query, page ->
-
-            Log.d("TAG_Max", "GifsViewModel.kt: update query or page")
-            Log.d("TAG_Max", "GifsViewModel.kt: query = $query")
-            Log.d("TAG_Max", "GifsViewModel.kt: page = $page")
-            Log.d("TAG_Max", "")
-
             query to page
         }.flatMapLatest { (query, page) ->
-            if (query.isNotEmpty()) {
-                gifsRepository.fetchGifsByQuery(query = query, page = page)
-            } else {
-                emptyFlow()
-            }
+            if (query.isNotEmpty()) gifsRepository.fetchGifsByQuery(query = query, page = page)
+            else emptyFlow()
         }.onEach { result ->
-            handleRequestResult(result)
+            handleSearchRequestResult(result)
         }.launchIn(viewModelScope)
-    }
-
-    private suspend fun handleRequestResult(result: Result<List<Gif>, DataError>) {
-        when (result) {
-            is Result.Error -> {
-
-                Log.d("TAG_Max", "GifsViewModel.kt: Result.Error = ${result.error.asUiText()}")
-                Log.d(
-                    "TAG_Max",
-                    "GifsViewModel.kt: _lastSuccessfulState currentPage = ${_lastSuccessfulState.value?.currentPage}"
-                )
-                Log.d("TAG_Max", "GifsViewModel.kt: state currentPage = ${state.value.currentPage}")
-                Log.d("TAG_Max", "")
-                Log.d(
-                    "TAG_Max",
-                    "GifsViewModel.kt: _lastSuccessfulState query = ${_lastSuccessfulState.value?.searchingQuery}"
-                )
-                Log.d("TAG_Max", "GifsViewModel.kt: state query = ${state.value.searchingQuery}")
-                Log.d("TAG_Max", "")
-
-                val lastState = _lastSuccessfulState.value ?: GifsState()
-
-                _state.update {
-                    it.copy(
-                        searchingQuery = lastState.searchingQuery,
-                        currentPage = lastState.currentPage,
-                        isLoading = false,
-                        hasError = true
-                    )
-                }
-                _currentInputQuery.update { lastState.searchingQuery }
-
-                handleErrorResult(result)
-            }
-
-            is Result.Success -> {
-
-                Log.d("TAG_Max", "GifsViewModel.kt: gifs = ${result.data}")
-                Log.d("TAG_Max", "GifsViewModel.kt: size = ${result.data.size}")
-                Log.d("TAG_Max", "")
-
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        gifs = result.data,
-                        hasError = false,
-                    )
-                }
-                _lastSuccessfulState.update { state.value }
-            }
-        }
-    }
-
-    private suspend fun handleErrorResult(result: Result.Error<DataError>) {
-        when (result.error) {
-            DataError.Local.THE_SAME_DATA -> Unit
-            else -> _event.send(GifsEvent.ShowNotification(result.error.asUiText()))
-        }
     }
 
     private fun processNewQuery() {
         if (currentInputQuery.value != state.value.searchingQuery) {
-            _state.update {
-                it.copy(isLoading = true, currentPage = 1, errorMessage = null)
-            }
+            loadingState(true)
+            _state.update { it.copy(currentPage = 1, errorMessage = null) }
             _currentInputQuery.update { state.value.searchingQuery }
         }
     }
 
     private fun clearSearchingQuery() {
-        _state.update {
-            it.copy(searchingQuery = "", errorMessage = null)
-        }
+        _state.update { it.copy(searchingQuery = "", errorMessage = null) }
     }
 
     private fun validateAndSetQuery(query: String) {
         val validationResult = queryValidator.validate(query)
-
-        _state.update {
-            it.copy(
-                searchingQuery = query,
-                errorMessage = validationResult
-            )
-        }
+        _state.update { it.copy(searchingQuery = query, errorMessage = validationResult) }
     }
 
     private fun changePage(pageDirection: PageDirection) {
-        if (!state.value.hasError) {
-            _lastSuccessfulState.update { state.value }
-        }
+        if (!state.value.hasError) _lastSuccessfulState.update { state.value }
+        loadingState(true)
 
         _state.update {
             it.copy(
-                isLoading = true,
                 currentPage = when (pageDirection) {
                     PageDirection.Next -> state.value.currentPage + 1
                     PageDirection.Previous -> state.value.currentPage - 1
@@ -211,24 +124,53 @@ class GifsViewModel(
 
     private fun deleteGif(gifId: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            loadingState(true)
 
-            gifsRepository.deleteGif(gifId).also { deletingResult ->
-                when (deletingResult) {
-                    is Result.Error -> handleErrorResult(deletingResult)
-                    is Result.Success -> {
-
-                        Log.d(
-                            "TAG_Max",
-                            "GifsViewModel.kt: gif was deleted, start fetching a new one"
-                        )
-                        Log.d("TAG_Max", "")
-
-                        deleteGifFromScreen(gifId)
-                        replaceDeletedGif(gifId)
-                    }
+            when (val deletingResult = gifsRepository.deleteGif(gifId)) {
+                is Result.Error -> handleError(deletingResult)
+                is Result.Success -> {
+                    deleteGifFromScreen(gifId)
+                    loadReplacementGif()
                 }
             }
+        }
+    }
+
+    private fun updateSearchingQuery(lastQuery: SearchQuery) {
+        val query = lastQuery.query
+        _state.update { it.copy(searchingQuery = query) }
+        _currentInputQuery.update { query }
+    }
+
+    private suspend fun handleSearchRequestResult(result: Result<List<Gif>, DataError>) {
+        when (result) {
+            is Result.Error -> handleErrorRequestState(result)
+            is Result.Success -> {
+                _state.update { it.copy(gifs = result.data, hasError = false) }
+                _lastSuccessfulState.update { state.value }
+                loadingState(false)
+            }
+        }
+    }
+
+    private suspend fun handleErrorRequestState(result: Result.Error<DataError>) {
+        val lastState = _lastSuccessfulState.value ?: GifsState()
+        _currentInputQuery.update { lastState.searchingQuery }
+        _state.update {
+            it.copy(
+                searchingQuery = lastState.searchingQuery,
+                currentPage = lastState.currentPage,
+                hasError = true
+            )
+        }
+        loadingState(false)
+        handleError(result)
+    }
+
+    private suspend fun handleError(result: Result.Error<DataError>) {
+        when (result.error) {
+            DataError.Local.THE_SAME_DATA -> Unit
+            else -> _event.send(GifsEvent.ShowNotification(result.error.asUiText()))
         }
     }
 
@@ -237,47 +179,28 @@ class GifsViewModel(
         _state.update { it.copy(gifs = updatedGifsList) }
     }
 
-    private suspend fun replaceDeletedGif(gifId: String) {
-        gifsRepository.provideNewGif().also { result ->
-            when (result) {
-                is Result.Error -> {
-
-                    Log.d(
-                        "TAG_Max",
-                        "GifsViewModel.kt: Error with fetching a new gif instead of deleted"
-                    )
-                    Log.d("TAG_Max", "")
-
-                    _state.update { it.copy(isLoading = false) }
-                    handleErrorResult(result)
-                }
-
-                is Result.Success -> {
-
-                    Log.d("TAG_Max", "GifsViewModel.kt: Success - we receive a new gif")
-                    Log.d("TAG_Max", "GifsViewModel.kt: gif = ${result.data}")
-                    Log.d("TAG_Max", "")
-
-                    state.value.gifs.forEach {
-                        Log.d("TAG_Max", "GifsViewModel.kt: gif - $it")
-                    }
-                    Log.d("TAG_Max", "")
-
-                    val existingGifIds = state.value.gifs.map { it.id }.toSet()
-                    if (result.data.id !in existingGifIds) {
-                        _state.update {
-                            it.copy(
-                                gifs = state.value.gifs + result.data,
-                                isLoading = false,
-                            )
-                        }
-                    } else {
-                        _state.update { it.copy(isLoading = false) }
-                        handleErrorResult(Result.Error(DataError.Local.CAN_NOT_ADD_GIF))
-                    }
-                }
+    private suspend fun loadReplacementGif() {
+        when (val result = gifsRepository.provideNewGif()) {
+            is Result.Success -> processReceivedGif(result)
+            is Result.Error -> {
+                loadingState(false)
+                handleError(result)
             }
         }
+    }
+
+    private suspend fun processReceivedGif(result: Result.Success<Gif>) {
+        val newGifId = result.data.id
+        val existingGifIds = state.value.gifs.map { it.id }.toSet()
+
+        if (newGifId !in existingGifIds) _state.update { it.copy(gifs = state.value.gifs + result.data) }
+        else handleError(Result.Error(DataError.Local.CAN_NOT_ADD_GIF))
+
+        loadingState(false)
+    }
+
+    private fun loadingState(isLoading: Boolean) {
+        _state.update { it.copy(isLoading = isLoading) }
     }
 
 }
