@@ -89,6 +89,7 @@ class GifsViewModel(
     private fun processNewQuery() {
         if (currentInputQuery.value != state.value.searchingQuery) {
             loadingState(true)
+            _currentInputQuery.update { "" }
             _state.update { it.copy(currentPage = 1, errorMessage = null) }
             _currentInputQuery.update { state.value.searchingQuery }
         }

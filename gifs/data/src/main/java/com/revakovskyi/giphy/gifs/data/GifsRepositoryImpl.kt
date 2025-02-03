@@ -30,7 +30,6 @@ class GifsRepositoryImpl(
     private val pendingPage = MutableStateFlow<Int?>(null)
 
     private val pageStartOffset = MutableStateFlow(0)
-    private val offsetToLoad = MutableStateFlow(0)
 
 
     override fun observeLastQuery(): Flow<SearchQuery> = lastQuery
@@ -75,37 +74,25 @@ class GifsRepositoryImpl(
         val neededAmount = 1
         preparePaginationData(lastQuery.value.currentPage + 1)
 
-        val availableGifs = checkGifsInLocalDB(lastQuery.value.id, neededAmount)
+        val availableGifs = dbManager.checkGifsInLocalDB(
+            queryId = lastQuery.value.id,
+            limit = neededAmount,
+            pageOffset = pageStartOffset.value
+        )
 
         return if (availableGifs.isNotEmpty()) Result.Success(availableGifs.first())
         else downloadNewGif(neededAmount)
-    }
-
-    private suspend fun downloadNewGif(neededAmount: Int): Result<Gif, DataError> {
-        val deferredResult = CompletableDeferred<Result<Gif, DataError>>()
-        pageStartOffset.update { pageStartOffset.value - neededAmount }
-
-        val offsetToLoad = lastQuery.value.maxGifPositionInTable + lastQuery.value.deletedGifsAmount
-
-        fetchAndSaveGifs(
-            amountToFetchFromRemote = neededAmount,
-            amountToGetFromDb = neededAmount,
-            offsetToLoad = offsetToLoad,
-            pageOffset = pageStartOffset.value,
-            onError = { errorResult -> deferredResult.complete(errorResult) },
-            onSuccess = { successResult ->
-                deferredResult.complete(Result.Success(successResult.data.first()))
-            }
-        )
-
-        return deferredResult.await()
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleSameQueryUpperPage(page: Int) {
         pendingPage.update { page }
         preparePaginationData(page)
 
-        val availableGifs = checkGifsInLocalDB(lastQuery.value.id)
+        val availableGifs = dbManager.checkGifsInLocalDB(
+            queryId = lastQuery.value.id,
+            limit = DEFAULT_AMOUNT_ON_PAGE,
+            pageOffset = pageStartOffset.value
+        )
 
         if (availableGifs.size >= DEFAULT_AMOUNT_ON_PAGE) {
             emit(Result.Success(availableGifs))
@@ -113,68 +100,22 @@ class GifsRepositoryImpl(
             return
         }
 
-        fetchAndSaveGifs(
+        fetchGifsAndProvideThemFromDBCache(
             amountToFetchFromRemote = DEFAULT_AMOUNT_ON_PAGE - availableGifs.size,
             amountToGetFromDb = DEFAULT_AMOUNT_ON_PAGE,
             offsetToLoad = calculateStartOffset(availableGifs.size),
             pageOffset = pageStartOffset.value,
             onError = { errorResult -> emit(errorResult) },
-            onSuccess = { successResult -> emit(Result.Success(successResult.data)) }
-        )
-    }
-
-    private fun calculateStartOffset(availableGifsSize: Int): Int {
-        val deletedGifsAmount = lastQuery.value.deletedGifsAmount
-        val maxPositionAfterDeleting = lastQuery.value.maxGifPositionInTable
-
-        return if (maxPositionAfterDeleting > 0) maxPositionAfterDeleting + deletedGifsAmount
-        else pageStartOffset.value + availableGifsSize
-    }
-
-    private suspend fun fetchAndSaveGifs(
-        amountToFetchFromRemote: Int,
-        amountToGetFromDb: Int,
-        offsetToLoad: Int,
-        pageOffset: Int,
-        onSuccess: suspend (success: Result.Success<List<Gif>>) -> Unit,
-        onError: suspend (error: Result.Error<DataError>) -> Unit,
-    ) {
-        networkManager.fetchGifsFromApi(
-            query = lastQuery.value,
-            limit = amountToFetchFromRemote,
-            offset = offsetToLoad,
-            onSuccess = { successResult ->
-                saveGifsIntoDb(
-                    gifs = successResult.data,
-                    onError = { errorResult -> onError(errorResult) },
-                    onSuccess = {
-                        getGifsFromDatabase(
-                            queryId = lastQuery.value.id,
-                            limit = amountToGetFromDb,
-                            pageOffset = pageOffset,
-                            onSuccess = { successResult -> onSuccess(Result.Success(successResult.data)) },
-                            onError = { errorResult -> onError(errorResult) }
-                        )
-                    }
-                )
-            },
-            onError = { errorResult ->
-                restoreLastSuccessfulQuery()
-                resetPendingEntities()
-                onError(errorResult)
-            }
+            onSuccess = { successResult -> emit(successResult) }
         )
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleFirstPageCase(page: Int) {
         val successfully = saveCurrentPage(
             page = page,
-            onError = { errorResult ->
-                emit(errorResult)
-            }
+            onError = { errorResult -> emit(errorResult) }
         )
         if (!successfully) return
-
 
         pageStartOffset.update { 0 }
 
@@ -189,44 +130,29 @@ class GifsRepositoryImpl(
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleSameQueryLowerPage(page: Int) {
         pendingPage.update { page }
-
         preparePaginationData(pendingPage.value!!)
 
-        val gifs = checkGifsInLocalDB(lastQuery.value.id)
+        val availableGifs = dbManager.checkGifsInLocalDB(
+            queryId = lastQuery.value.id,
+            limit = DEFAULT_AMOUNT_ON_PAGE,
+            pageOffset = pageStartOffset.value
+        )
 
-        if (gifs.size < DEFAULT_AMOUNT_ON_PAGE) {
-            networkManager.fetchGifsFromApi(
-                query = searchQuery.value,
-                limit = DEFAULT_AMOUNT_ON_PAGE - gifs.lastIndex,
-                offset = pageStartOffset.value,
-                onSuccess = { successResult ->
-                    saveGifsIntoDb(
-                        gifs = successResult.data,
-                        onError = { errorResult ->
-                            emit(errorResult)
-                        },
-                        onSuccess = {
-                            getGifsFromDatabase(
-                                queryId = lastQuery.value.id,
-                                limit = DEFAULT_AMOUNT_ON_PAGE,
-                                pageOffset = pageStartOffset.value,
-                                onSuccess = { successResult -> emit(successResult) },
-                                onError = { errorResult -> emit(errorResult) }
-                            )
-                        }
-                    )
-                },
-                onError = { errorResult ->
-                    restoreLastSuccessfulQuery()
-                    resetPendingEntities()
-                    emit(errorResult)
-                }
-            )
-        } else {
-            emit(Result.Success(gifs))
+        if (availableGifs.size >= DEFAULT_AMOUNT_ON_PAGE) {
+            emit(Result.Success(availableGifs))
             pendingPage.value?.let { saveCurrentPage(it) }
             resetPendingEntities()
+            return
         }
+
+        fetchGifsAndProvideThemFromDBCache(
+            amountToFetchFromRemote = DEFAULT_AMOUNT_ON_PAGE - availableGifs.size,
+            amountToGetFromDb = DEFAULT_AMOUNT_ON_PAGE,
+            offsetToLoad = pageStartOffset.value,
+            pageOffset = pageStartOffset.value,
+            onError = { errorResult -> emit(errorResult) },
+            onSuccess = { successResult -> emit(successResult) }
+        )
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.handleNewQuery(query: String) {
@@ -237,65 +163,23 @@ class GifsRepositoryImpl(
         else processNewQuery()
     }
 
-    private fun preparePaginationData(page: Int) {
-        pageStartOffset.update { (page - 1) * DEFAULT_AMOUNT_ON_PAGE }
-    }
+    private suspend fun downloadNewGif(neededAmount: Int): Result<Gif, DataError> {
+        val deferredResult = CompletableDeferred<Result<Gif, DataError>>()
+        pageStartOffset.update { pageStartOffset.value - neededAmount }
+        val offsetToLoad = lastQuery.value.maxGifPositionInTable + lastQuery.value.deletedGifsAmount
 
-    private suspend fun checkGifsInLocalDB(
-        queryId: Long,
-        gifsAmount: Int = DEFAULT_AMOUNT_ON_PAGE,
-    ): List<Gif> {
-        val observingResult = dbManager.getGifsByQuery(
-            queryId = queryId,
-            limit = gifsAmount,
-            pageOffset = pageStartOffset.value
+        fetchGifsAndProvideThemFromDBCache(
+            amountToFetchFromRemote = neededAmount,
+            amountToGetFromDb = neededAmount,
+            offsetToLoad = offsetToLoad,
+            pageOffset = pageStartOffset.value,
+            onError = { errorResult -> deferredResult.complete(errorResult) },
+            onSuccess = { successResult ->
+                deferredResult.complete(Result.Success(successResult.data.first()))
+            }
         )
-
-        return when (observingResult) {
-            is Result.Error -> emptyList()
-            is Result.Success -> observingResult.data
-        }
-    }
-
-    private suspend fun saveCurrentPage(
-        page: Int,
-        onError: suspend (errorResult: Result.Error<DataError.Local>) -> Unit = {},
-    ): Boolean {
-        val deferredResult = CompletableDeferred<Boolean>()
-
-        dbManager.updateCurrentPage(currentPage = page).also { result ->
-            if (result is Result.Error) {
-                onError(result)
-                deferredResult.complete(false)
-            } else deferredResult.complete(true)
-        }
 
         return deferredResult.await()
-    }
-
-    private suspend fun getGifsFromDatabase(
-        queryId: Long,
-        limit: Int,
-        pageOffset: Int,
-        onSuccess: suspend (success: Result.Success<List<Gif>>) -> Unit,
-        onError: suspend (error: Result.Error<DataError.Local>) -> Unit,
-    ) {
-        val observingResult = dbManager.getGifsByQuery(
-            queryId = queryId,
-            limit = limit,
-            pageOffset = pageOffset
-        )
-
-        when (observingResult) {
-            is Result.Error -> onError(observingResult)
-            is Result.Success -> onSuccess(observingResult)
-        }
-    }
-
-    private fun initializeNewQuery(query: String) {
-        pageStartOffset.update { 0 }
-        pendingPage.update { 1 }
-        searchQuery.update { SearchQuery(query = query, currentPage = pendingPage.value!!) }
     }
 
     private suspend fun FlowCollector<Result<List<Gif>, DataError>>.processExistingQuery(
@@ -303,14 +187,18 @@ class GifsRepositoryImpl(
     ) {
         searchQuery.update { existingQuery }
 
-        val gifs = checkGifsInLocalDB(searchQuery.value.id)
+        val availableGifs = dbManager.checkGifsInLocalDB(
+            queryId = searchQuery.value.id,
+            limit = DEFAULT_AMOUNT_ON_PAGE,
+            pageOffset = pageStartOffset.value
+        )
 
-        if (gifs.size < DEFAULT_AMOUNT_ON_PAGE) {
+        if (availableGifs.size < DEFAULT_AMOUNT_ON_PAGE) {
             searchQuery.update { lastQuery.value }
 
             preparePaginationData(lastQuery.value.currentPage + 1)
 
-            val availableGifsForNextPageSize = gifs.size
+            val availableGifsForNextPageSize = availableGifs.size
             val amount = DEFAULT_AMOUNT_ON_PAGE - availableGifsForNextPageSize
 
             val pageStartOffset = pageStartOffset.value
@@ -321,12 +209,12 @@ class GifsRepositoryImpl(
                 maxPositionAfterDeleting + deletedGifsAmount
             } else pageStartOffset + availableGifsForNextPageSize
 
-            offsetToLoad.update { actualStartOffsetToLoad }
+//            offsetToLoad.update { actualStartOffsetToLoad }
 
             networkManager.fetchGifsFromApi(
                 query = searchQuery.value,
                 limit = amount,
-                offset = offsetToLoad.value,
+                offset = actualStartOffsetToLoad,
                 onSuccess = { successResult ->
                     saveGifsIntoDb(
                         gifs = successResult.data,
@@ -352,7 +240,7 @@ class GifsRepositoryImpl(
             )
         } else {
             dbManager.saveOrUpdateQuery(searchQuery.value)
-            emit(Result.Success(gifs))
+            emit(Result.Success(availableGifs))
         }
     }
 
@@ -401,6 +289,41 @@ class GifsRepositoryImpl(
         )
     }
 
+    private suspend fun fetchGifsAndProvideThemFromDBCache(
+        amountToFetchFromRemote: Int,
+        amountToGetFromDb: Int,
+        offsetToLoad: Int,
+        pageOffset: Int,
+        onSuccess: suspend (success: Result.Success<List<Gif>>) -> Unit,
+        onError: suspend (error: Result.Error<DataError>) -> Unit,
+    ) {
+        networkManager.fetchGifsFromApi(
+            query = lastQuery.value,
+            limit = amountToFetchFromRemote,
+            offset = offsetToLoad,
+            onSuccess = { successResult ->
+                saveGifsIntoDb(
+                    gifs = successResult.data,
+                    onError = { errorResult -> onError(errorResult) },
+                    onSuccess = {
+                        getGifsFromDatabase(
+                            queryId = lastQuery.value.id,
+                            limit = amountToGetFromDb,
+                            pageOffset = pageOffset,
+                            onSuccess = { successResult -> onSuccess(Result.Success(successResult.data)) },
+                            onError = { errorResult -> onError(errorResult) }
+                        )
+                    }
+                )
+            },
+            onError = { errorResult ->
+                restoreLastSuccessfulQuery()
+                resetPendingEntities()
+                onError(errorResult)
+            }
+        )
+    }
+
     private suspend fun saveGifsIntoDb(
         gifs: List<Gif>,
         onSuccess: suspend () -> Unit,
@@ -432,6 +355,57 @@ class GifsRepositoryImpl(
                 onSuccess()
             }
         }
+    }
+
+    private suspend fun getGifsFromDatabase(
+        queryId: Long,
+        limit: Int,
+        pageOffset: Int,
+        onSuccess: suspend (success: Result.Success<List<Gif>>) -> Unit,
+        onError: suspend (error: Result.Error<DataError.Local>) -> Unit,
+    ) {
+        val observingResult = dbManager.getGifsByQuery(
+            queryId = queryId,
+            limit = limit,
+            pageOffset = pageOffset
+        )
+
+        when (observingResult) {
+            is Result.Error -> onError(observingResult)
+            is Result.Success -> onSuccess(observingResult)
+        }
+    }
+
+    private suspend fun saveCurrentPage(
+        page: Int,
+        onError: suspend (errorResult: Result.Error<DataError.Local>) -> Unit = {},
+    ): Boolean {
+        val deferredResult = CompletableDeferred<Boolean>()
+        dbManager.updateCurrentPage(currentPage = page).also { result ->
+            if (result is Result.Error) {
+                onError(result)
+                deferredResult.complete(false)
+            } else deferredResult.complete(true)
+        }
+        return deferredResult.await()
+    }
+
+    private fun preparePaginationData(page: Int) {
+        pageStartOffset.update { (page - 1) * DEFAULT_AMOUNT_ON_PAGE }
+    }
+
+    private fun calculateStartOffset(availableGifsSize: Int): Int {
+        val deletedGifsAmount = lastQuery.value.deletedGifsAmount
+        val maxPositionAfterDeleting = lastQuery.value.maxGifPositionInTable
+
+        return if (maxPositionAfterDeleting > 0) maxPositionAfterDeleting + deletedGifsAmount
+        else pageStartOffset.value + availableGifsSize
+    }
+
+    private fun initializeNewQuery(query: String) {
+        pageStartOffset.update { 0 }
+        pendingPage.update { 1 }
+        searchQuery.update { SearchQuery(query = query, currentPage = pendingPage.value!!) }
     }
 
     private suspend fun restoreLastSuccessfulQuery() {

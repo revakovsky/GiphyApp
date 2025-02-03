@@ -116,6 +116,13 @@ internal class LocalDbManager(
         }
     }
 
+    override suspend fun checkGifsInLocalDB(queryId: Long, limit: Int, pageOffset: Int): List<Gif> {
+        return when (val observingResult = getGifsByQuery(queryId, limit, pageOffset)) {
+            is Result.Error -> emptyList()
+            is Result.Success -> observingResult.data
+        }
+    }
+
     override fun getGifsByQueryId(queryId: Long): Flow<Result<List<Gif>, DataError.Local>> {
         return flow {
             try {

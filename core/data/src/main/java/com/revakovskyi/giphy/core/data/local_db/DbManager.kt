@@ -24,6 +24,7 @@ interface DbManager {
         limit: Int,
         pageOffset: Int,
     ): Result<List<Gif>, DataError.Local>
+    suspend fun checkGifsInLocalDB(queryId: Long, limit: Int, pageOffset: Int): List<Gif>
     fun getGifsByQueryId(queryId: Long): Flow<Result<List<Gif>, DataError.Local>>
     suspend fun getSearchQueryByQueryText(queryText: String): SearchQuery?
     suspend fun deleteGif(gifId: String): EmptyDataResult<DataError.Local>
