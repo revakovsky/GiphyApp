@@ -7,8 +7,10 @@ import com.revakovskyi.giphy.core.domain.gifs.SearchQuery
 import com.revakovskyi.giphy.core.domain.util.DataError
 import com.revakovskyi.giphy.core.domain.util.Result
 import com.revakovskyi.giphy.core.presentation.ui.uitls.QueryValidator
+import com.revakovskyi.giphy.core.presentation.ui.uitls.UiText
 import com.revakovskyi.giphy.core.presentation.ui.uitls.asUiText
 import com.revakovskyi.giphy.gifs.domain.GifsRepository
+import com.revakovskyi.giphy.gifs.presentation.R
 import com.revakovskyi.giphy.gifs.presentation.gifs.utils.PageDirection
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -178,6 +180,11 @@ class GifsViewModel(
     private fun deleteGifFromScreen(gifId: String) {
         val updatedGifsList = state.value.gifs.filterNot { it.id == gifId }
         _state.update { it.copy(gifs = updatedGifsList) }
+        _event.trySend(
+            GifsEvent.ShowNotification(
+                message = UiText.StringResource(R.string.successfully_deleted)
+            )
+        )
     }
 
     private suspend fun loadReplacementGif() {

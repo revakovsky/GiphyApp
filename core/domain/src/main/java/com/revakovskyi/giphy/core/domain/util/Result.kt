@@ -5,16 +5,6 @@ sealed interface Result<out D, out E : Error> {
     data class Success<out D>(val data: D) : Result<D, Nothing>
     data class Error<out E : com.revakovskyi.giphy.core.domain.util.Error>(val error: E) : Result<Nothing, E>
 
-    suspend fun <R> fold(
-        onSuccess: suspend (D) -> R,
-        onError: suspend (E) -> R
-    ): R {
-        return when (this) {
-            is Success -> onSuccess(data)
-            is Error -> onError(error)
-        }
-    }
-
 }
 
 

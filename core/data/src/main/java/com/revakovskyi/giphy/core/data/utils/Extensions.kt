@@ -8,7 +8,7 @@ import kotlinx.serialization.SerializationException
 import retrofit2.Response
 import java.net.UnknownHostException
 
-suspend inline fun <reified T> safeCall(execute: () -> Response<T>): Result<T, DataError.Network> {
+inline fun <reified T> safeCall(execute: () -> Response<T>): Result<T, DataError.Network> {
     val response = try {
         execute()
     } catch (e: UnknownHostException) {
@@ -27,7 +27,7 @@ suspend inline fun <reified T> safeCall(execute: () -> Response<T>): Result<T, D
 }
 
 
-suspend inline fun <reified T> responseToResult(response: Response<T>): Result<T, DataError.Network> {
+inline fun <reified T> responseToResult(response: Response<T>): Result<T, DataError.Network> {
     return when (response.code()) {
         in 200..299 -> {
             response.body()?.let { Result.Success(it) }
@@ -46,7 +46,7 @@ suspend inline fun <reified T> responseToResult(response: Response<T>): Result<T
 }
 
 
-suspend inline fun <T> safeDbCall(action: () -> T): Result<T, DataError.Local> {
+inline fun <T> safeDbCall(action: () -> T): Result<T, DataError.Local> {
     return try {
         Result.Success(action())
     } catch (e: SQLiteFullException) {
