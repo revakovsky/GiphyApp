@@ -1,7 +1,6 @@
 package com.revakovskyi.giphy.core.data.local_db
 
 import android.database.sqlite.SQLiteFullException
-import android.util.Log
 import com.revakovskyi.giphy.core.data.mapper.toDomain
 import com.revakovskyi.giphy.core.data.mapper.toEntity
 import com.revakovskyi.giphy.core.data.utils.safeDbCall
@@ -55,18 +54,6 @@ internal class LocalDbManager(
         searchQueryDao.clearUnsuccessfulSearchQueries()
     }
 
-    override suspend fun markQueryAsSuccessful(queryId: Long) {
-        searchQueryDao.markQueryAsSuccessful(queryId)
-    }
-
-    override suspend fun updateGifsMaxPosition(queryId: Long) {
-        val maxPosition = getMaxGifPosition(queryId)
-        searchQueryDao.updateGifsMaxPosition(
-            queryId = queryId,
-            maxPosition = maxPosition,
-        )
-    }
-
     override fun isDbEmpty(): Flow<Boolean> {
         return gifsDao.isDbEmpty()
             .catch { e ->
@@ -75,49 +62,33 @@ internal class LocalDbManager(
             }
     }
 
-    override suspend fun saveCurrentPage(currentPage: Int): EmptyDataResult<DataError.Local> {
-        return safeDbCall {
-            searchQueryDao.saveCurrentPage(lastQuery.value.id, currentPage)
+    override suspend fun markQueryAsSuccessful(queryId: Long) {
+        searchQueryDao.markQueryAsSuccessful(queryId)
+    }
 
-//            Log.d("TAG_Max", "LocalDbManager.kt: saveCurrentPage")
-//            Log.d("TAG_Max", "LocalDbManager.kt: currentPage = $currentPage")
-//            Log.d("TAG_Max", "LocalDbManager.kt: lastQuery = ${lastQuery.value}")
-//
-//            val lastQuery = lastQuery.value.copy(currentPage = currentPage)
-//
-//            Log.d("TAG_Max", "LocalDbManager.kt: lastQueryWithNewPage = $lastQuery")
-//            Log.d("TAG_Max", "")
-//
-//            searchQueryDao.updateQuery(lastQuery.toEntity())
+    override suspend fun updateGifsMaxPosition(queryId: Long) {
+        val maxPosition = getMaxGifPosition(queryId)
+        searchQueryDao.updateGifsMaxPosition(queryId, maxPosition)
+    }
+
+    override suspend fun updateCurrentPage(currentPage: Int): EmptyDataResult<DataError.Local> {
+        return safeDbCall {
+            searchQueryDao.updateCurrentPage(lastQuery.value.id, currentPage)
         }
     }
 
     override suspend fun saveOrUpdateQuery(searchQuery: SearchQuery): EmptyDataResult<DataError.Local> {
         return safeDbCall {
-            val existingQuery = searchQueryDao.getQueryByText(searchQuery.query)
-
-            Log.d("TAG_Max", "LocalDbManager.kt: searchQueryToSave = $searchQuery")
-            Log.d("TAG_Max", "LocalDbManager.kt: suchQueryExist = ${existingQuery != null}")
-            Log.d("TAG_Max", "LocalDbManager.kt: existingQuery = $existingQuery")
-
-            if (existingQuery == null) {
-
-                Log.d("TAG_Max", "LocalDbManager.kt: saveQuery")
-
-                searchQueryDao.saveQuery(searchQuery.toEntity())
-            } else {
-
-                Log.d("TAG_Max", "LocalDbManager.kt: updateQuery")
-                val copy = searchQuery.toEntity().copy(
-                    id = existingQuery.id,
-                    wasSuccessful = existingQuery.wasSuccessful,
-                    timestamp = System.currentTimeMillis(),
-                    currentPage = lastQuery.value.currentPage
+            searchQueryDao.getSearchQueryByQueryText(searchQuery.query)?.let { existingQuery ->
+                searchQueryDao.updateQuery(
+                    searchQuery.toEntity().copy(
+                        id = existingQuery.id,
+                        wasSuccessful = existingQuery.wasSuccessful,
+                        timestamp = System.currentTimeMillis(),
+                        currentPage = lastQuery.value.currentPage
+                    )
                 )
-                searchQueryDao.updateQuery(copy)
-            }
-
-            Log.d("TAG_Max", "")
+            } ?: searchQueryDao.saveQuery(searchQuery.toEntity())
 
             searchQueryDao.deleteOldQueries()
         }
@@ -126,67 +97,30 @@ internal class LocalDbManager(
     override suspend fun saveGifs(gifs: List<Gif>): EmptyDataResult<DataError.Local> {
         return safeDbCall {
             val queryId = _lastQuery.value.id
-
-            Log.d("TAG_Max", "LocalDbManager.kt: saveGifsIntoDb")
-            Log.d("TAG_Max", "LocalDbManager.kt: lastQuery = $queryId")
-            Log.d("TAG_Max", "")
-
-//            gifsDao.saveGifs(gifs.map { it.toEntity() })
-
             val maxPosition = getMaxGifPosition(queryId)
 
-            Log.d("TAG_Max", "LocalDbManager.kt: currentMaxPosition = $maxPosition")
-
-            // 2. Обновляем `position` у новых GIF'ок
-            val updatedGifs = gifs.mapIndexed { index, gif ->
+            val gifEntitiesWithPositions = gifs.mapIndexed { index, gif ->
                 gif.toEntity().copy(position = maxPosition + index + 1)
             }
-
-            gifsDao.saveGifs(updatedGifs)
+            gifsDao.saveGifs(gifEntitiesWithPositions)
         }
     }
 
     override suspend fun getGifsByQuery(
         queryId: Long,
-        gifsAmount: Int,
+        limit: Int,
         pageOffset: Int,
     ): Result<List<Gif>, DataError.Local> {
-        return try {
-            val gifs = gifsDao.getGifsByQuery(queryId, gifsAmount, pageOffset).map { it.toDomain() }
-
-            Log.d("TAG_Max", "LocalDbManager.kt: observeGifsFromDbByQuery")
-            Log.d("TAG_Max", "LocalDbManager.kt: queryId = $queryId")
-            Log.d("TAG_Max", "LocalDbManager.kt: gifsAmount = $gifsAmount")
-            Log.d("TAG_Max", "LocalDbManager.kt: pageOffset = $pageOffset")
-            Log.d("TAG_Max", "LocalDbManager.kt: gifs = $gifs")
-            Log.d("TAG_Max", "")
-
-            Result.Success(gifs)
-        } catch (e: Exception) {
-            Log.d("TAG_Max", "LocalDbManager.kt: observeGifsFromDbByQuery ERROR")
-            Log.d("TAG_Max", "LocalDbManager.kt: error = ${e.localizedMessage}")
-            Log.d("TAG_Max", "")
-
-            e.printStackTrace()
-
-            if (e is CancellationException) throw e
-            Result.Error(
-                if (e is SQLiteFullException) DataError.Local.DISK_FULL
-                else DataError.Local.UNKNOWN
-            )
+        return safeDbCall {
+            gifsDao.getGifsByQuery(queryId, limit, pageOffset).map { it.toDomain() }
         }
-    }
-
-    override suspend fun getSearchQueryByQueryText(queryText: String): SearchQuery? {
-        return searchQueryDao.getQueryByText(queryText)?.toDomain()
     }
 
     override fun getGifsByQueryId(queryId: Long): Flow<Result<List<Gif>, DataError.Local>> {
         return flow {
             try {
                 gifsDao.getGifsByQueryId(queryId).collect { entities ->
-                    val gifs = entities.map { it.toDomain() }
-                    emit(Result.Success(gifs))
+                    emit(Result.Success(entities.map { it.toDomain() }))
                 }
             } catch (e: SQLiteFullException) {
                 e.printStackTrace()
@@ -197,6 +131,10 @@ internal class LocalDbManager(
                 emit(Result.Error(DataError.Local.UNKNOWN))
             }
         }
+    }
+
+    override suspend fun getSearchQueryByQueryText(queryText: String): SearchQuery? {
+        return searchQueryDao.getSearchQueryByQueryText(queryText)?.toDomain()
     }
 
     override suspend fun deleteGif(gifId: String): EmptyDataResult<DataError.Local> {
@@ -225,13 +163,7 @@ internal class LocalDbManager(
     private fun observeForLastQuery() {
         searchQueryDao.getLastQuery()
             .map { it?.toDomain() ?: defaultQuery }
-            .onEach { query ->
-
-                Log.d("TAG_Max", "LocalDbManager.kt: updatedQuery = $query")
-                Log.d("TAG_Max", "")
-
-                _lastQuery.update { query }
-            }
+            .onEach { query -> _lastQuery.update { query } }
             .catch { e -> e.printStackTrace() }
             .launchIn(scope)
     }

@@ -39,10 +39,10 @@ interface SearchQueryDao {
     fun getLastQuery(): Flow<SearchQueryEntity?>
 
     @Query("SELECT * FROM search_queries WHERE `query` = :queryText LIMIT 1")
-    suspend fun getQueryByText(queryText: String): SearchQueryEntity?
+    suspend fun getSearchQueryByQueryText(queryText: String): SearchQueryEntity?
 
     @Query("UPDATE search_queries SET current_page = :currentPage, timestamp = :timestamp WHERE id = :id")
-    suspend fun saveCurrentPage(
+    suspend fun updateCurrentPage(
         id: Long,
         currentPage: Int,
         timestamp: Long = System.currentTimeMillis(),

@@ -363,7 +363,7 @@ class GifsRepositoryImpl(
     ): List<Gif> {
         val observingResult = dbManager.getGifsByQuery(
             queryId = queryId,
-            gifsAmount = gifsAmount,
+            limit = gifsAmount,
             pageOffset = pageStartOffset.value
         )
 
@@ -446,7 +446,7 @@ class GifsRepositoryImpl(
     ): Boolean {
         val deferredResult = CompletableDeferred<Boolean>()
 
-        dbManager.saveCurrentPage(currentPage = page).also { result ->
+        dbManager.updateCurrentPage(currentPage = page).also { result ->
             if (result is Result.Error) {
                 logDebug("Failed to update page in DB", "currentPage = $page")
                 onError(result)
@@ -474,7 +474,7 @@ class GifsRepositoryImpl(
 
         val observingResult = dbManager.getGifsByQuery(
             queryId = queryId,
-            gifsAmount = limit,
+            limit = limit,
             pageOffset = pageOffset
         )
 
