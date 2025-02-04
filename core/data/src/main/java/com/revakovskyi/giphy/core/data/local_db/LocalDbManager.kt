@@ -51,7 +51,7 @@ internal class LocalDbManager(
 
 
     override suspend fun clearUnsuccessfulSearchQueries() {
-        searchQueryDao.clearUnsuccessfulSearchQueries()
+        safeDbCall { searchQueryDao.clearUnsuccessfulSearchQueries() }
     }
 
     override fun isDbEmpty(): Flow<Boolean> {
@@ -63,18 +63,18 @@ internal class LocalDbManager(
     }
 
     override suspend fun markQueryAsSuccessful(queryId: Long) {
-        searchQueryDao.markQueryAsSuccessful(queryId)
+        safeDbCall { searchQueryDao.markQueryAsSuccessful(queryId) }
     }
 
     override suspend fun updateGifsMaxPosition(queryId: Long) {
-        val maxPosition = getMaxGifPosition(queryId)
-        searchQueryDao.updateGifsMaxPosition(queryId, maxPosition)
+        safeDbCall {
+            val maxPosition = getMaxGifPosition(queryId)
+            searchQueryDao.updateGifsMaxPosition(queryId, maxPosition)
+        }
     }
 
     override suspend fun updateCurrentPage(currentPage: Int): EmptyDataResult<DataError.Local> {
-        return safeDbCall {
-            searchQueryDao.updateCurrentPage(lastQuery.value.id, currentPage)
-        }
+        return safeDbCall { searchQueryDao.updateCurrentPage(lastQuery.value.id, currentPage) }
     }
 
     override suspend fun saveOrUpdateQuery(searchQuery: SearchQuery): EmptyDataResult<DataError.Local> {
@@ -141,24 +141,34 @@ internal class LocalDbManager(
     }
 
     override suspend fun getSearchQueryByQueryText(queryText: String): SearchQuery? {
-        return searchQueryDao.getSearchQueryByQueryText(queryText)?.toDomain()
-    }
+        val result = safeDbCall { searchQueryDao.getSearchQueryByQueryText(queryText) }
 
-    override suspend fun deleteGif(gifId: String): EmptyDataResult<DataError.Local> {
-        return safeDbCall {
-            gifsDao.deleteGif(gifId)
+        return when (result) {
+            is Result.Error -> null
+            is Result.Success -> result.data?.toDomain()
         }
     }
 
+    override suspend fun deleteGif(gifId: String): EmptyDataResult<DataError.Local> {
+        return safeDbCall { gifsDao.deleteGif(gifId) }
+    }
+
     override suspend fun getMaxGifPosition(queryId: Long): Int {
-        return gifsDao.getMaxGifPosition(queryId) ?: 0
+        val result = safeDbCall { gifsDao.getMaxGifPosition(queryId) }
+
+        return when (result) {
+            is Result.Error -> 0
+            is Result.Success -> result.data ?: 0
+        }
     }
 
     override suspend fun updateDeletedGifsAmount(deletedGifsAmount: Int) {
-        searchQueryDao.updateDeletedGifsAmount(
-            queryId = lastQuery.value.id,
-            deletedGifsAmount = deletedGifsAmount
-        )
+        safeDbCall {
+            searchQueryDao.updateDeletedGifsAmount(
+                queryId = lastQuery.value.id,
+                deletedGifsAmount = deletedGifsAmount
+            )
+        }
     }
 
     private suspend fun ensureDefaultQueryExists() {
