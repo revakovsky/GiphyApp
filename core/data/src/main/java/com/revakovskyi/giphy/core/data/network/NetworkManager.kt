@@ -34,7 +34,7 @@ internal class NetworkManagerImpl(
     private val apiService: ApiService,
 ) : NetworkManager {
 
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val internetStatus: StateFlow<InternetStatus> = connectivityObserver.internetStatus
         .stateIn(
@@ -52,42 +52,23 @@ internal class NetworkManagerImpl(
         onError: suspend (error: Result.Error<DataError.Network>) -> Unit,
     ) {
         if (internetStatus.value == InternetStatus.Available) {
-            val networkResult = fetchGifs(
-                query = query,
-                offset = offset,
-                amountToDownload = limit
-            )
+            val result = safeCall {
+                apiService.getGifsByQuery(query = query.query, offset = offset, limit = limit)
+            }
 
-            when (networkResult) {
-                is Result.Success -> onSuccess(networkResult)
-                is Result.Error -> onError(networkResult)
+            when (result) {
+                is Result.Error -> onError(result)
+                is Result.Success -> {
+                    onSuccess(
+                        Result.Success(
+                            result.data.data.mapIndexed { index, gifDto ->
+                                gifDto.toDomain(query.id, index)
+                            }
+                        )
+                    )
+                }
             }
         } else onError(Result.Error(DataError.Network.NO_INTERNET))
-    }
-
-    private suspend fun fetchGifs(
-        query: SearchQuery,
-        offset: Int,
-        amountToDownload: Int,
-    ): Result<List<Gif>, DataError.Network> {
-        val result = safeCall {
-            apiService.getGifsByQuery(
-                query = query.query,
-                offset = offset,
-                limit = amountToDownload
-            )
-        }
-
-        return when (result) {
-            is Result.Error -> result
-            is Result.Success -> {
-                Result.Success(
-                    result.data.data.mapIndexed { index, gifDto ->
-                        gifDto.toDomain(query.id, index)
-                    }
-                )
-            }
-        }
     }
 
 }
