@@ -1,6 +1,5 @@
 package com.revakovskyi.giphy.gifs.presentation.gifs
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revakovskyi.giphy.core.domain.gifs.Gif
 import com.revakovskyi.giphy.core.domain.gifs.SearchQuery
@@ -9,12 +8,11 @@ import com.revakovskyi.giphy.core.domain.util.Result
 import com.revakovskyi.giphy.core.presentation.ui.uitls.QueryValidator
 import com.revakovskyi.giphy.core.presentation.ui.uitls.UiText
 import com.revakovskyi.giphy.core.presentation.ui.uitls.asUiText
+import com.revakovskyi.giphy.core.presentation.view_model.BaseViewModel
 import com.revakovskyi.giphy.gifs.domain.GifsRepository
 import com.revakovskyi.giphy.gifs.presentation.R
 import com.revakovskyi.giphy.gifs.presentation.gifs.utils.PageDirection
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,7 +24,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -34,16 +31,10 @@ import kotlinx.coroutines.launch
 class GifsViewModel(
     private val gifsRepository: GifsRepository,
     private val queryValidator: QueryValidator,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(GifsState())
-    val state: StateFlow<GifsState> = _state.asStateFlow()
+) : BaseViewModel<GifsState, GifsAction, GifsEvent>(GifsState()) {
 
     private val _currentInputQuery = MutableStateFlow("")
     private val currentInputQuery: StateFlow<String> = _currentInputQuery.asStateFlow()
-
-    private val _event = Channel<GifsEvent>()
-    val event: Flow<GifsEvent> = _event.receiveAsFlow()
 
     private val _lastSuccessfulState = MutableStateFlow<GifsState?>(null)
 
@@ -54,7 +45,7 @@ class GifsViewModel(
     }
 
 
-    fun onAction(action: GifsAction) {
+    override fun onAction(action: GifsAction) {
         when (action) {
             GifsAction.Search -> processNewQuery()
             GifsAction.ClearQuery -> clearSearchingQuery()
@@ -92,25 +83,25 @@ class GifsViewModel(
         if (currentInputQuery.value != state.value.searchingQuery) {
             loadingState(true)
             _currentInputQuery.update { "" }
-            _state.update { it.copy(currentPage = 1, errorMessage = null) }
+            updateState { it.copy(currentPage = 1, errorMessage = null) }
             _currentInputQuery.update { state.value.searchingQuery }
         }
     }
 
     private fun clearSearchingQuery() {
-        _state.update { it.copy(searchingQuery = "", errorMessage = null) }
+        updateState { it.copy(searchingQuery = "", errorMessage = null) }
     }
 
     private fun validateAndSetQuery(query: String) {
         val validationResult = queryValidator.validate(query)
-        _state.update { it.copy(searchingQuery = query, errorMessage = validationResult) }
+        updateState { it.copy(searchingQuery = query, errorMessage = validationResult) }
     }
 
     private fun changePage(pageDirection: PageDirection) {
         if (!state.value.hasError) _lastSuccessfulState.update { state.value }
         loadingState(true)
 
-        _state.update {
+        updateState {
             it.copy(
                 currentPage = when (pageDirection) {
                     PageDirection.Next -> state.value.currentPage + 1
@@ -122,7 +113,7 @@ class GifsViewModel(
     }
 
     private fun openOriginalGif(gif: Gif) {
-        _event.trySend(GifsEvent.OpenOriginalGif(gif))
+        sendEvent(GifsEvent.OpenOriginalGif(gif))
     }
 
     private fun deleteGif(gifId: String) {
@@ -141,25 +132,25 @@ class GifsViewModel(
 
     private fun updateSearchingQuery(lastQuery: SearchQuery) {
         val query = lastQuery.query
-        _state.update { it.copy(searchingQuery = query) }
+        updateState { it.copy(searchingQuery = query) }
         _currentInputQuery.update { query }
     }
 
-    private suspend fun handleSearchRequestResult(result: Result<List<Gif>, DataError>) {
+    private fun handleSearchRequestResult(result: Result<List<Gif>, DataError>) {
         when (result) {
             is Result.Error -> handleErrorRequestState(result)
             is Result.Success -> {
-                _state.update { it.copy(gifs = result.data, hasError = false) }
+                updateState { it.copy(gifs = result.data, hasError = false) }
                 _lastSuccessfulState.update { state.value }
                 loadingState(false)
             }
         }
     }
 
-    private suspend fun handleErrorRequestState(result: Result.Error<DataError>) {
+    private fun handleErrorRequestState(result: Result.Error<DataError>) {
         val lastState = _lastSuccessfulState.value ?: GifsState()
         _currentInputQuery.update { lastState.searchingQuery }
-        _state.update {
+        updateState {
             it.copy(
                 searchingQuery = lastState.searchingQuery,
                 currentPage = lastState.currentPage,
@@ -170,17 +161,17 @@ class GifsViewModel(
         handleError(result)
     }
 
-    private suspend fun handleError(result: Result.Error<DataError>) {
+    private fun handleError(result: Result.Error<DataError>) {
         when (result.error) {
             DataError.Local.THE_SAME_DATA -> Unit
-            else -> _event.send(GifsEvent.ShowNotification(result.error.asUiText()))
+            else -> sendEvent(GifsEvent.ShowNotification(result.error.asUiText()))
         }
     }
 
     private fun deleteGifFromScreen(gifId: String) {
         val updatedGifsList = state.value.gifs.filterNot { it.id == gifId }
-        _state.update { it.copy(gifs = updatedGifsList) }
-        _event.trySend(
+        updateState { it.copy(gifs = updatedGifsList) }
+        sendEvent(
             GifsEvent.ShowNotification(
                 message = UiText.StringResource(R.string.successfully_deleted)
             )
@@ -197,18 +188,18 @@ class GifsViewModel(
         }
     }
 
-    private suspend fun processReceivedGif(result: Result.Success<Gif>) {
+    private fun processReceivedGif(result: Result.Success<Gif>) {
         val newGifId = result.data.id
         val existingGifIds = state.value.gifs.map { it.id }.toSet()
 
-        if (newGifId !in existingGifIds) _state.update { it.copy(gifs = state.value.gifs + result.data) }
+        if (newGifId !in existingGifIds) updateState { it.copy(gifs = state.value.gifs + result.data) }
         else handleError(Result.Error(DataError.Local.CAN_NOT_ADD_GIF))
 
         loadingState(false)
     }
 
     private fun loadingState(isLoading: Boolean) {
-        _state.update { it.copy(isLoading = isLoading) }
+        updateState { it.copy(isLoading = isLoading) }
     }
 
 }
