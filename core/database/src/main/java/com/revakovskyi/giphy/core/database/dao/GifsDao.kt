@@ -1,5 +1,6 @@
 package com.revakovskyi.giphy.core.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
@@ -15,6 +16,7 @@ interface GifsDao {
     @Upsert
     suspend fun saveGifs(gifs: List<GifEntity>)
 
+    // TODO: uncomment correct old method later!
     @Query("SELECT * FROM gifs WHERE query_id = :queryId ORDER BY position ASC LIMIT :limit OFFSET :offset")
     suspend fun getGifsByQuery(queryId: Long, limit: Int, offset: Int): List<GifEntity>
 
@@ -26,5 +28,9 @@ interface GifsDao {
 
     @Query("DELETE FROM gifs WHERE gif_id = :gifId")
     suspend fun deleteGif(gifId: String)
+
+    // TODO: a new method to get paged gifs
+    @Query("SELECT * FROM gifs WHERE query_id = :queryId ORDER BY position ASC")
+    fun getPagedGifsByQueryId(queryId: Long): PagingSource<Int, GifEntity>
 
 }
