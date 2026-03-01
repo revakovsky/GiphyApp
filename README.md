@@ -1,6 +1,6 @@
 # Giphy App
 
-Test task: an application to display GIF animations from the Giphy website
+GIF browser app with search and animation playback powered by Giphy API. Built with Kotlin, Retrofit, Coroutines
 
 ---
 
